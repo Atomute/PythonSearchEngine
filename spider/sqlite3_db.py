@@ -7,6 +7,7 @@ class DB():
 
     def create_table(self,name):
         self.cursor.execute("""CREATE TABLE {} (
+                                ID integer,
                                 url text,
                                 title text,
                                 p text
@@ -23,9 +24,3 @@ class DB():
     def close_conn(self):
         self.conn.commit()
         self.conn.close()
-
-mydb = DB('myDB.db')
-
-mydb.update("website",("j","title","7"))
-print(mydb.get_table("website"))
-mydb.close_conn()

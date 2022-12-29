@@ -12,6 +12,7 @@ class crawler():
         return requests.get(url).text
 
     def find_links(self,url):
+        # find links in each webpages and add to urltovisit list
         html = self.download_url(url)
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
@@ -23,24 +24,20 @@ class crawler():
             self.urltovisit.append(fullpath)
 
     def crawl(self,url):
+        # crawl to each webpages and download its HTML doc
         print("I'm in "+url)
+        self.visitedurl.append(url)
         self.find_links(url)
 
+        return self.download_url(url)
+
     def run(self):
+        # main function to execute the program
+        # it will lead the bot to crawl through the appropiate url
+
         while self.urltovisit:
             url = self.urltovisit.pop(0)
             if url in self.visitedurl or not url.startswith(self.rooturl):
                 continue
-            self.crawl(url)
-            self.visitedurl.append(url)
-        return self.visitedurl
+            yield self.crawl(url)
 
-atomute = crawler("https://atomute.github.io/")
-
-themoviedb = crawler("https://www.themoviedb.org/movie")
-
-wikipedia = crawler("https://en.wikipedia.org/wiki/")
-wikipedia.run()
-
-tft = crawler("https://tftactics.gg/")
-# tft.run()

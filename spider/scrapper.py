@@ -1,32 +1,45 @@
 # execute all scraping here
 
-import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
-import spider.crawler as crawler
-import database.sqlite3_db as sqlite3_db
+from crawler import *
+from sqlite3_db import *
 
-class scrapper():
+class scraper():
 
     def __init__(self,url):
-        self.url = url
-        self.visited_url = []
+        self.rooturl = url
 
-    def get_html(self,url):
-        spider = crawler(url)
-        return 
+        self.crawler = crawler(url)
+        self.id_counter = 0
+
+        self.db = DB('test.db')
+        self.db.create_table("atomuteBlog")
 
     def get_title(self,html):
-        pass
+        soup = BeautifulSoup(html,'html.parser')
+        title = soup.find('title')
+        return title.string
 
     def get_p(self,html):
-        pass
+        soup = BeautifulSoup(html,'html.parser')
+        p = soup.find('p')
+        return p.string
 
-    def pushtoDB(self):
-        pass
+    def pushtoDB(self,url,title,ps):
+        self.db.update("atomuteBlog",(self.id_counter,url,title,ps))
+        self.id_counter+=1
 
     def run(self):
-        pass
+        # main function to execute the program
+        for html in self.crawler.run():
+            title = self.get_title(html)
+            p = self.get_p(html)
+            self.pushtoDB(self.crawler.urltovisit[0],str(title),str(p))
+        self.db.close_conn()
+
+atomute = scraper("https://atomute.github.io/")
+atomute.run()
 
         
