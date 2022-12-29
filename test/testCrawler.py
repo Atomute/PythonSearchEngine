@@ -1,5 +1,5 @@
 import unittest
-import crawler
+import spider.crawler as crawler
 
 class testCrawler(unittest):
     def __init__():

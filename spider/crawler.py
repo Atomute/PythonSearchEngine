@@ -40,7 +40,7 @@ atomute = crawler("https://atomute.github.io/")
 themoviedb = crawler("https://www.themoviedb.org/movie")
 
 wikipedia = crawler("https://en.wikipedia.org/wiki/")
-# wikipedia.run()
+wikipedia.run()
 
 tft = crawler("https://tftactics.gg/")
-tft.run()
+# tft.run()

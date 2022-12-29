@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <style>
+      /* Center the search bar vertically and horizontally */
+      .search-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      /* Make the search bar responsive */
+      @media (max-width: 600px) {
+        .search-container {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+
+      /* Style the search bar */
+      .search-form {
+        display: flex;
+        align-items: center;
+        width: 500px;
+        height: 50px;
+        border-radius: 25px;
+        background-color: #000;
+        box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+      }
+      .search-form:focus-within {
+        box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+      }
+      .search-form input {
+        flex: 1;
+        padding: 0 20px;
+        font-size: 18px;
+        border: none;
+        background: transparent;
+        color: #fff;
+      }
+      .search-form input::placeholder {
+        color: #aaa;
+      }
+      .search-form input:focus {
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="search-container">
+      <form class="search-form" method="post" action="/">
+        <input type="text" name="search_term" placeholder="Search">
+      </form>
+    </div>
+  </body>
+</html>
