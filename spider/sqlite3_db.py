@@ -15,7 +15,8 @@ class DB():
 
     def update(self,name,value):
         # take table name and tuple of value
-        self.cursor.execute("INSERT INTO {} VALUES {}".format(name,value))
+        query = "INSERT INTO {} VALUES (?, ?, ?, ?)".format(name)
+        self.cursor.execute(query, value)
 
     def get_table(self,name):
         self.cursor.execute("SELECT * FROM {}".format(name))
@@ -24,3 +25,4 @@ class DB():
     def close_conn(self):
         self.conn.commit()
         self.conn.close()
+
