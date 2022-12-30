@@ -2,6 +2,16 @@
   <head>
     <style>
       /* Center the search bar vertically and horizontally */
+      .backgroundimg{
+        height: 100%;
+        object-fit: cover;
+        margin: 0;
+        padding: 0;
+        background-image: url(./hd-wallpaper-gdf6908f0a_1920.jpg);
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 100%;
+      }
       .search-container {
         display: flex;
         align-items: center;
@@ -51,10 +61,12 @@
     </style>
   </head>
   <body>
-    <div class="search-container">
-      <form class="search-form" method="post" action="/">
-        <input type="text" name="search_term" placeholder="Search">
-      </form>
-    </div>
+    <div class="backgroundimg">
+      <div class="search-container">
+        <form class="search-form" method="post" action="/">
+          <input type="text" name="search_term" placeholder="Search">
+        </form>
+      </div>
+    </div>  
   </body>
 </html>
