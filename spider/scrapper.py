@@ -9,6 +9,7 @@ from sqlite3_db import *
 class scraper():
 
     def __init__(self,url,websiteName):
+        self.ans = ""
         self.rooturl = url
 
         self.crawler = crawler(url)
