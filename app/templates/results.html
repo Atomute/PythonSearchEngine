@@ -10,7 +10,10 @@
       {% if results %}
         <ul>
           {% for result in results %}
-            <li>{{ result['title'] }}</li>
+            <li>{{ result['title'] }}
+              <a href="url"> {{ result['url'] }}</a>
+            </li>
+            
           {% endfor %}
         </ul>
       {% else %}

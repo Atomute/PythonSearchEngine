@@ -1,1 +1,1 @@
-SELECT * FROM booktoScrape;
+SELECT * FROM booktoScrape WHERE title LIKE '%History%';
