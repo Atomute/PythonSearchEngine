@@ -1,1 +1,0 @@
-SELECT * FROM booktoScrape WHERE title LIKE '%History%';
