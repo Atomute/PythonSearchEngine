@@ -8,7 +8,6 @@ print("database opened")
 
 cur = conn.cursor()
 
-
 @app.route('/', methods=['GET', 'POST'])
 def search():
     search_term = None
