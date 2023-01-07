@@ -9,7 +9,7 @@ class DB():
                       "PWD=yourStrong(!)Password;")
 
         self.cursor = self.conn.cursor()
-
+    
     def insert_websites(self,value):
         # take table name and tuple of value
         query = "INSERT INTO websites (ID, URL, title, content, last_crawl) VALUES (?, ?, ?, ?, ?)"
