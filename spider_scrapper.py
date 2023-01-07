@@ -6,7 +6,7 @@ from datetime import datetime
 import timeit
 
 from spider_webTraveler import *
-from DB_SQLserver import *
+from DB_sqlite3 import *
 
 class scraper():
     websiteID_counter = 0
