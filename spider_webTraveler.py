@@ -1,12 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import timeit
 
-class crawler():
+class webTraveler():
     def __init__(self,url):
         self.rooturl = url
+
+        self.allurl = []
         self.urltovisit = [url]
         self.visitedurl = []
+        self.dupeLinkCount = []
     
     def download_url(self,url):
         return requests.get(url).text
@@ -23,9 +27,19 @@ class crawler():
             
             self.urltovisit.append(fullpath)
 
+    def find_link_duplicate(self,url):
+        index = self.visitedurl.index(url)
+
+        while index+1 > len(self.dupeLinkCount):
+            self.dupeLinkCount.append(1)
+
+        self.dupeLinkCount[index] += 1
+
+        return self.dupeLinkCount
+
+
     def crawl(self,url):
         # crawl to each webpages and download its HTML doc
-        print("I'm in "+url)
         self.visitedurl.append(url)
         self.find_links(url)
 
@@ -36,8 +50,14 @@ class crawler():
         # it will lead the bot to crawl through the appropiate url
 
         while self.urltovisit:
+            self.start = timeit.default_timer()
             url = self.urltovisit.pop(0)
-            if url in self.visitedurl or not url.startswith(self.rooturl):
-                continue
-            yield self.crawl(url)
 
+            if not url.startswith(self.rooturl):
+                continue
+            self.allurl.append(url)
+            if url in self.visitedurl:
+                self.find_link_duplicate(url)
+                continue
+
+            yield self.crawl(url),url

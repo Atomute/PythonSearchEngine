@@ -1,0 +1,7 @@
+websites
+websiteID int
+URL text
+title text
+contents text
+link_ref int
+last_crawl text
