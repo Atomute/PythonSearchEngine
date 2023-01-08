@@ -22,6 +22,8 @@ class scraper():
     def get_title(self,html):
         soup = BeautifulSoup(html,'html.parser')
         title = soup.find('title')
+        if title == None:
+            return
         return title.string
 
     def get_p(self,html):
@@ -62,6 +64,6 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    atomute = scraper("https://www.tutorialspoint.com/")
+    atomute = scraper("https://gundam.fandom.com/wiki/")
     atomute.run()
         

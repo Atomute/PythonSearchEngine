@@ -23,6 +23,8 @@ class webTraveler():
 
         for link in links:
             path = link.get('href')
+            if path == None or path.startswith("#"):
+                continue
             fullpath = urljoin(url,path)
             
             self.urltovisit.append(fullpath)

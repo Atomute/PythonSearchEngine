@@ -36,11 +36,12 @@ class SearchEngine(tk.Tk):
 
     def perform_search(self, query):
         # Connect to the database
-        conn = sqlite3.connect("test.db")
+        conn = sqlite3.connect("test.sqlite")
         c = conn.cursor()
         query = "%" + query + "%"
         #Query Find exact word from user input
         c.execute("SELECT * FROM websites WHERE title LIKE ?", (query,))
+        
         results = c.fetchall()
 
         # disconnection database
