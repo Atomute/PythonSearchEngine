@@ -1,1 +1,1 @@
-SELECT * FROM booktoScrape WHERE title LIKE '%History%';
+SELECT * FROM websites WHERE title LIKE "%LOVE%"
