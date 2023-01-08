@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect("test.db")
+conn = sqlite3.connect("test.sqlite")
 
 cursor = conn.cursor()        
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (

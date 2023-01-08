@@ -51,6 +51,7 @@ class webTraveler():
 
         while self.urltovisit:
             self.start = timeit.default_timer()
+            
             url = self.urltovisit.pop(0)
 
             if not url.startswith(self.rooturl):
@@ -59,5 +60,5 @@ class webTraveler():
             if url in self.visitedurl:
                 self.find_link_duplicate(url)
                 continue
-
+            
             yield self.crawl(url),url

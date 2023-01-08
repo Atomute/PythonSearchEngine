@@ -63,10 +63,10 @@ class scraper():
         except KeyboardInterrupt:
             self.db.close_conn()
         
+if __name__ == "__main__":
+    atomute = scraper("https://atomute.github.io/")
+    atomute.run()
 
-atomute = scraper("https://atomute.github.io/")
-atomute.run()
-
-booktoScrape = scraper("https://books.toscrape.com/")
-booktoScrape.run()
+    staem = scraper("https://store.steampowered.com/")
+    staem.run()
         
