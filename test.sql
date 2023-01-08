@@ -1,1 +1,0 @@
-SELECT * FROM websites WHERE title LIKE "%LOVE%"

@@ -1,9 +1,13 @@
-import sqlite3
+import pyodbc
 
-conn = sqlite3.connect("test.db")
+conn = pyodbc.connect("Driver={SQL Server Native Client 11.0};"
+                      "Server=localhost,1436;"
+                      "Database=testDB;"
+                      "UID=sa;"
+                      "PWD=1Secure*Password1;")
 
 cursor = conn.cursor()        
-createWebsites = """CREATE TABLE IF NOT EXISTS websites (
+createWebsites = """CREATE TABLE websites (
                     ID int,
                     URL text,
                     title text,
@@ -12,7 +16,7 @@ createWebsites = """CREATE TABLE IF NOT EXISTS websites (
 
 cursor.execute(createWebsites)
 
-createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
+createkeywords = """CREATE TABLE keywords (
                     keywordID int,
                     keyword text,
                     URL text,
@@ -20,5 +24,5 @@ createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
 
 cursor.execute(createkeywords)
 
-conn.commit()
+cursor.commit()
 conn.close()

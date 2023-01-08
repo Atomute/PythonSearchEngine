@@ -3,10 +3,10 @@ import pyodbc
 class DB():
     def __init__(self):
         self.conn = pyodbc.connect("Driver={SQL Server Native Client 11.0};"
-                      "Server=localhost,1433;"
-                      "Database=myDB;"
+                      "Server=localhost,1436;"
+                      "Database=testDB;"
                       "UID=sa;"
-                      "PWD=yourStrong(!)Password;")
+                      "PWD=1Secure*Password1;")
 
         self.cursor = self.conn.cursor()
     
