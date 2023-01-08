@@ -3,7 +3,7 @@ import sqlite3
 conn = sqlite3.connect("test.db")
 
 cursor = conn.cursor()        
-createWebsites = """CREATE TABLE websites (
+createWebsites = """CREATE TABLE IF NOT EXISTS websites (
                     ID int,
                     URL text,
                     title text,
@@ -12,7 +12,7 @@ createWebsites = """CREATE TABLE websites (
 
 cursor.execute(createWebsites)
 
-createkeywords = """CREATE TABLE keywords (
+createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
                     keywordID int,
                     keyword text,
                     URL text,
