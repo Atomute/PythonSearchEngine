@@ -8,11 +8,11 @@ class DB():
     
     def insert_websites(self,value):
         # take table name and tuple of value
-        query = "INSERT INTO websites (ID, URL, title, content, last_crawl) VALUES (?, ?, ?, ?, ?)"
+        query = "INSERT INTO websites (URL, title, content, last_crawl) VALUES (?, ?, ?, ?)"
         self.cursor.execute(query, value)
 
     def insert_keywords(self,value):
-        query = "INSERT INTO keywords VALUES (?, ?, ?, ?)"
+        query = "INSERT INTO keywords VALUES (?, ?, ?)"
         self.cursor.execute(query, value)
 
     def remove(self,table,row_ID):

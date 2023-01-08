@@ -4,7 +4,7 @@ conn = sqlite3.connect("test.sqlite")
 
 cursor = conn.cursor()        
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (
-                    ID int,
+                    websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
                     URL text,
                     title text,
                     content text,
@@ -13,7 +13,7 @@ createWebsites = """CREATE TABLE IF NOT EXISTS websites (
 cursor.execute(createWebsites)
 
 createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
-                    keywordID int,
+                    keywordID INTEGER PRIMARY KEY AUTOINCREMENT,
                     keyword text,
                     URL text,
                     count int)"""

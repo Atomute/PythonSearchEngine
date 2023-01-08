@@ -39,11 +39,9 @@ class scraper():
 
         match table:
             case "websites":
-                self.db.insert_websites(value,)
+                self.db.insert_websites(value)
             case "keywords":
                 self.db.insert_keywords(value)
-        
-        scraper.websiteID_counter += 1
 
     def run(self):
         # main function to execute the program
@@ -52,7 +50,7 @@ class scraper():
                 title = self.get_title(html)
                 p = self.get_p(html)
 
-                value = (scraper.websiteID_counter,url,title,'|'.join(p),datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                value = (url,title,'|'.join(p),datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 # print(value)
                 self.pushtoDB("websites",value)
 
@@ -64,9 +62,6 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    atomute = scraper("https://atomute.github.io/")
+    atomute = scraper("https://www.tutorialspoint.com/")
     atomute.run()
-
-    staem = scraper("https://store.steampowered.com/")
-    staem.run()
         
