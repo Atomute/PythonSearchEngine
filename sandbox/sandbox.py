@@ -1,7 +1,4 @@
+maDick = {"Dick":56}
 
-
-from datetime import datetime
-
-print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-
+if 56 in maDick:
+    print("yes Daddy")

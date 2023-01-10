@@ -64,6 +64,6 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    atomute = scraper("https://gundam.fandom.com/wiki/")
+    atomute = scraper("https://www.azlyrics.com/")
     atomute.run()
-        
+    
