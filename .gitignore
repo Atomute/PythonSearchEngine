@@ -3,4 +3,5 @@ __pycache__/spider_webTraveler.cpython-310.pyc
 __pycache__/DB_sqlite3.cpython-310.pyc
 test/__pycache__/test_scraper.cpython-310.pyc
 test/__pycache__/test_traveler.cpython-310.pyc
-
+test
+sandbox
