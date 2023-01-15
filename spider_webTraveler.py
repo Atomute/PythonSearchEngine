@@ -14,7 +14,6 @@ class webTraveler():
 
         # tell the crawler to obey the robot.txt
         self.robot = RobotExclusionRulesParser()
-        self.robot.fetch(self.rooturl+"robots.txt")
 
     def download_url(self,url):
         return requests.get(url).text
@@ -34,6 +33,7 @@ class webTraveler():
                 continue
             
             self.urltovisit.append(fullpath)
+        return self.urltovisit
 
     def find_link_duplicate(self,url):
         self.visitedurl[url] += 1
@@ -50,7 +50,8 @@ class webTraveler():
     def run(self):
         # main function to execute the program
         # it will lead the bot to crawl through the appropiate url
-
+        self.robot.fetch(self.rooturl+"robots.txt")
+        
         while self.urltovisit:
             self.start = timeit.default_timer()
             

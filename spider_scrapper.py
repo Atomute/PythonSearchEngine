@@ -12,11 +12,7 @@ class scraper():
     websiteID_counter = 0
 
     def __init__(self,url):
-        self.ans = " "
-        self.rooturl = url
-
         self.crawler = webTraveler(url)
-
         self.db = DB()
 
     def get_title(self,html):
@@ -36,9 +32,11 @@ class scraper():
 
         return p
 
+    def getheaders(self):
+        pass
+
     def pushtoDB(self,table,value):
         # push data in to database
-
         match table:
             case "websites":
                 self.db.insert_websites(value)
@@ -64,6 +62,6 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    atomute = scraper("https://www.azlyrics.com/")
+    atomute = scraper("https://quotes.toscrape.com/")
     atomute.run()
     
