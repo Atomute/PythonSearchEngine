@@ -1,35 +1,78 @@
 import unittest
 import sys
-sys.path.insert(1,"/work/PythonSearchEngine/")
+sys.path.insert(1,"./")
 from spider_scrapper import scraper
 
 class test_get_title(unittest.TestCase):
+    def setUp(self) -> None:
+        self.test_scraper = scraper()
+
     def test_normal(self):
-        self.testSpider = scraper("https://www.blank.org/")
-        self.assertEqual(self.testSpider.get_title("<title>This is title</title>"),"This is title")
+        self.assertIsInstance(self.test_scraper.get_title("<html> <title>This is title</title> </html>"),str)
 
     def test_notitle(self):
-        self.testSpider = scraper("https://www.blank.org/")
-        self.assertEqual(self.testSpider.get_title(""),None)
+        self.assertEqual(self.test_scraper.get_title(""),None)
 
-class test_get_p(unittest.TestCase):
+    def test_empty_title(self):
+        self.assertEqual(self.test_scraper.get_title("<title></title>"),None)
+
+    def test_space_title(self):
+        self.assertEqual(self.test_scraper.get_title("<title> </title>"),None)
+
+    def test_wrong_title(self):
+        self.assertEqual(self.test_scraper.get_title("</title>"),None)
+    
+    def test_exact(self):
+        self.assertEqual(self.test_scraper.get_title("<title>   This is title </title>"),"This is title")
+
+class test_get_contents(unittest.TestCase):
+    def setUp(self):
+        self.test_scraper = scraper()
+
     def test_normal(self):
-        self.testSpider = scraper("https://www.blank.org/")
-        self.assertEqual(self.testSpider.get_p("<p>This is p</p>"),["This is p"])
+        tester = self.test_scraper.get_contents("<body> <p>Hi</p>   <div>Hello</div> <span>Bonjour</span> </body>")
 
-    def test_nop(self):
-        self.testSpider = scraper("https://www.blank.org/")
-        self.assertEqual(self.testSpider.get_p(""),[])
+        self.assertIsInstance(tester,str)
 
-# class test_pushtoDB(unittest.TestCase):
-#     def normalTest():
-#         pass
+    def test_noContent(self):
+        tester = self.test_scraper.get_contents("")
 
-#     def wrongtableTest():
-#         pass
+        self.assertEqual(tester,None)
 
-#     def wrongValueTest():
-#         pass
+    def test_empty_body(self):
+        tester = self.test_scraper.get_contents("<body></body>")
+
+        self.assertEqual(tester,None)
+
+    def test_space_body(self):
+        tester = self.test_scraper.get_contents("<body>      </body>")
+
+        self.assertEqual(tester,None)
+
+    def test_wrong_body(self):
+        tester = self.test_scraper.get_contents("<body>")
+
+        self.assertEqual(tester,None)
+
+    def test_empty_obj_in_body(self):
+        tester = self.test_scraper.get_contents("<body> <Div></div> <p></p> <span></span> </body>")
+
+        self.assertEqual(tester,None)    
+
+    def test_exact(self):
+        tester = self.test_scraper.get_contents("<body>      <Div>Menu</div>            <p>This is paragraph</p> <span>This is span</span>     </body>")
+
+        self.assertEqual(tester,"Menu This is paragraph This is span")    
+
+class test_pushtoDB(unittest.TestCase):
+    def normalTest():
+        pass
+
+    def wrongtableTest():
+        pass
+
+    def wrongValueTest():
+        pass
 
 if __name__ == '__main__':
     unittest.main()  

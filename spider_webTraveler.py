@@ -5,11 +5,11 @@ import timeit
 from robotexclusionrulesparser import RobotExclusionRulesParser
 
 class webTraveler():
-    def __init__(self,url):
-        self.rooturl = url
+    def __init__(self):
+        self.rooturl = ""
 
         self.allurl = []
-        self.urltovisit = [url]
+        self.urltovisit = []
         self.visitedurl = {}
 
         # tell the crawler to obey the robot.txt
@@ -18,18 +18,18 @@ class webTraveler():
     def download_url(self,url):
         return requests.get(url).text
 
-    def find_links(self,url):
+    def find_links(self,html):
         # find links in each webpages and add to urltovisit list
-        html = self.download_url(url)
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
 
         for link in links:
             path = link.get('href')
-            if path == None or path.startswith("#"):
-                continue
             fullpath = urljoin(url,path)
+
             if not fullpath.startswith(self.rooturl):
+                continue
+            if  path == None or "#" in path:
                 continue
             
             self.urltovisit.append(fullpath)
@@ -43,13 +43,16 @@ class webTraveler():
 
         print("I'm in "+url)
         self.visitedurl[url] = 1
-        self.find_links(url)   
+        html = self.download_url(url)
+        self.find_links(html)   
 
-        return self.download_url(url)
+        return html
 
-    def run(self):
+    def run(self,rooturl):
         # main function to execute the program
         # it will lead the bot to crawl through the appropiate url
+        self.rooturl = rooturl
+        self.urltovisit.append(rooturl)
         self.robot.fetch(self.rooturl+"robots.txt")
         
         while self.urltovisit:

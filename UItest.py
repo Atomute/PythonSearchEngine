@@ -40,7 +40,7 @@ class SearchEngine(tk.Tk):
         c = conn.cursor()
         query = "%" + query + "%"
         #Query Find exact word from user input
-        c.execute("SELECT * FROM websites WHERE title LIKE ? or content LIKE ?", (query,query,))
+        c.execute("SELECT * FROM websites WHERE content LIKE ?", (query,))
         
         results = c.fetchall()
 

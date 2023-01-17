@@ -1,14 +1,15 @@
 import sqlite3
 
-conn = sqlite3.connect("test.sqlite")
+conn = sqlite3.connect("database.sqlite")
 
 cursor = conn.cursor()        
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (
-                    websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    URL text,
+                    websiteID INTEGER NOT NULL,
+                    URL text NOT NULL,
                     title text,
                     content text,
-                    last_crawl DATETIME)"""
+                    last_crawl DATETIME,
+                    PRIMARY KEY (websiteID,URL))"""
 
 cursor.execute(createWebsites)
 

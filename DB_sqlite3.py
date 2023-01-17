@@ -2,27 +2,30 @@ import sqlite3
 
 class DB():
     def __init__(self):
-        self.conn = sqlite3.connect("test.sqlite")
+        self.conn = sqlite3.connect("database.sqlite")
 
         self.cursor = self.conn.cursor()
     
     def insert_websites(self,value):
         # take table name and tuple of value
-        query = "INSERT INTO websites (URL, title, content, last_crawl) VALUES (?, ?, ?, ?)"
+        query = "REPLACE INTO websites (URL, title, content, last_crawl) VALUES (?, ?, ?, ?)"
         self.cursor.execute(query, value)
 
     def insert_keywords(self,value):
+        # insert keywords to keywords table
         query = "INSERT INTO keywords VALUES (?, ?, ?)"
         self.cursor.execute(query, value)
 
     def remove(self,table,row_ID):
         pass
 
-    def get_table(self,name):
-        self.cursor.execute("SELECT * FROM {}".format(name))
+    def get_column(self,table,column):
+        # get all item from "name" table
+        self.cursor.execute("SELECT * FROM {} WHERE {}".format(table,column))
         return self.cursor.fetchall()
 
     def close_conn(self):
+        # commit and close database
         self.conn.commit()
         self.conn.close()
 

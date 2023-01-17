@@ -9,31 +9,41 @@ from spider_webTraveler import *
 from DB_sqlite3 import *
 
 class scraper():
-    websiteID_counter = 0
-
-    def __init__(self,url):
-        self.crawler = webTraveler(url)
+    def __init__(self):
+        self.crawler = webTraveler()
         self.db = DB()
 
     def get_title(self,html):
+        # get content from title tag
         soup = BeautifulSoup(html,'html.parser')
         title = soup.find('title')
-        if title == None:
-            return
-        return title.string
 
-    def get_p(self,html):
+        if title == None: return
+
+        titleText = title.text
+        
+        if title.text.isspace() or titleText == '': return
+
+        return titleText.strip()
+
+    def get_contents(self,html):
+        # get all contents under the body tag
         soup = BeautifulSoup(html,'html.parser')
-        ps = soup.find_all('p')
+        ps = soup.find_all('body')
+        ans = []
 
-        if ps == None:
-            return 
-        p = [p.text for p in ps]
+        if ps == []: return 
+        for p in ps:
+            textp = p.text.strip()
+            if textp.isspace(): continue
+            listp = textp.splitlines()
+            strp = ' '.join(listp)
+            ans.append(strp)
 
-        return p
+        answer = " ".join(ans)
+        if answer.isspace() or answer == '': return
 
-    def getheaders(self):
-        pass
+        return answer
 
     def pushtoDB(self,table,value):
         # push data in to database
@@ -43,14 +53,16 @@ class scraper():
             case "keywords":
                 self.db.insert_keywords(value)
 
-    def run(self):
+    def run(self,rooturl):
         # main function to execute the program
+        # get html and url from crawler to extract contents from website and push to db
+        visited = self.db.get_column("websites","URL")
         try:
-            for html,url in self.crawler.run():
+            for html,url in self.crawler.run(rooturl):
                 title = self.get_title(html)
-                p = self.get_p(html)
+                p = self.get_contents(html)
 
-                value = (url,title,'|'.join(p),datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                value = (url,title,p,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 # print(value)
                 self.pushtoDB("websites",value)
 
@@ -62,6 +74,12 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    atomute = scraper("https://quotes.toscrape.com/")
-    atomute.run()
+    roots = ["https://quotes.toscrape.com/","https://books.toscrape.com/","https://www.sqlite.org/","https://gundam.fandom.com/wiki/"]
+    for root in roots: 
+        atomute = scraper()
+        atomute.run(root)
+
+""" ["https://quotes.toscrape.com/","https://books.toscrape.com/","https://gundam.fandom.com/wiki/","https://www.35mmc.com/","https://www.sqlite.org/",
+"https://en.wikipedia.org/wiki/","https://www.detectiveconanworld.com/wiki/"]
+"""
     
