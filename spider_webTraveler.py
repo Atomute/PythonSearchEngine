@@ -18,8 +18,9 @@ class webTraveler():
     def download_url(self,url):
         return requests.get(url).text
 
-    def find_links(self,html):
+    def find_links(self,url):
         # find links in each webpages and add to urltovisit list
+        html = requests.get(url).text
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
 
@@ -44,7 +45,7 @@ class webTraveler():
         print("I'm in "+url)
         self.visitedurl[url] = 1
         html = self.download_url(url)
-        self.find_links(html)   
+        self.find_links(url)   
 
         return html
 

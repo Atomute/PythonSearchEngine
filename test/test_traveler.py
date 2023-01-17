@@ -8,13 +8,16 @@ class test_find_links(unittest.TestCase):
         self.traveler = webTraveler()
 
     def test_normal(self):
-        input = "<a>link1</a>    <a>link2</a>"
+        input = "https://atomute.github.io/"
         tester = self.traveler.find_links(input)
 
         self.assertIsInstance(tester,list)
 
     def test_numbersign(self):
-        pass
+        input = "https://atomute.github.io/"
+        tester = self.traveler.find_links(input)
+
+        self.assertIsInstance(tester,list)
 
     def test_notinroot(self):
         pass

@@ -74,7 +74,7 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    roots = ["https://quotes.toscrape.com/","https://books.toscrape.com/","https://www.sqlite.org/","https://gundam.fandom.com/wiki/"]
+    roots = ["https://en.wikipedia.org/wiki/"]
     for root in roots: 
         atomute = scraper()
         atomute.run(root)
