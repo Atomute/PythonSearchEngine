@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock,patch
 import sys
 sys.path.insert(1,"./")
 from spider_scrapper import scraper
@@ -65,8 +66,12 @@ class test_get_contents(unittest.TestCase):
         self.assertEqual(tester,"Menu This is paragraph This is span")    
 
 class test_pushtoDB(unittest.TestCase):
-    def normalTest():
-        pass
+    def setUp(self):
+        self.test_scraper = scraper()
+    
+    @patch()
+    def normalTest(self):
+        tester = self.test_scraper.pushtoDB()
 
     def wrongtableTest():
         pass
