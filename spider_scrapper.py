@@ -27,9 +27,9 @@ class scraper():
         return titleText.strip()
 
     def get_contents(self,html):
-        # get all contents under the body tag
+        # get all contents under the html tag
         soup = BeautifulSoup(html,'html.parser')
-        ps = soup.find_all('body')
+        ps = soup.find_all()    # this will get every text under HTML tags
         ans = []
 
         if ps == []: return 
@@ -45,13 +45,9 @@ class scraper():
 
         return answer
 
-    def pushtoDB(self,table,value):
+    def pushtoDB(self,value):
         # push data in to database
-        match table:
-            case "websites":
-                self.db.insert_websites(value)
-            case "keywords":
-                self.db.insert_keywords(value)
+        self.db.insert_websites(value)
 
     def run(self,rooturl):
         # main function to execute the program
@@ -59,12 +55,14 @@ class scraper():
         visited = self.db.get_column("websites","URL")
         try:
             for html,url in self.crawler.run(rooturl):
+
                 title = self.get_title(html)
                 p = self.get_contents(html)
 
                 value = (url,title,p,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
                 # print(value)
-                self.pushtoDB("websites",value)
+                self.pushtoDB(value)
 
                 stop = timeit.default_timer()
                 print("crawled "+url+" in ",stop-self.crawler.start)
@@ -74,7 +72,7 @@ class scraper():
             self.db.close_conn()
         
 if __name__ == "__main__":
-    roots = ["https://en.wikipedia.org/wiki/"]
+    roots = ["https://gundam.fandom.com/wiki/"]
     for root in roots: 
         atomute = scraper()
         atomute.run(root)

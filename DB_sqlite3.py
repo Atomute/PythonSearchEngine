@@ -2,13 +2,13 @@ import sqlite3
 
 class DB():
     def __init__(self):
-        self.conn = sqlite3.connect("test.sqlite")
+        self.conn = sqlite3.connect("testt.sqlite")
 
         self.cursor = self.conn.cursor()
     
     def insert_websites(self,value):
         # take table name and tuple of value
-        query = "INSERT INTO websites (URL, title, content, last_crawl) VALUES (?, ?, ?, ?)"
+        query = "REPLACE INTO websites (URL, title, content, last_crawl) VALUES (?, ?, ?, ?)"
         self.cursor.execute(query, value)
 
     def insert_keywords(self,value):

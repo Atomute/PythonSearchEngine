@@ -20,7 +20,7 @@ class webTraveler():
 
     def find_links(self,url):
         # find links in each webpages and add to urltovisit list
-        html = requests.get(url).text
+        html = self.download_url(url)
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
 

@@ -1,17 +1,22 @@
 import sqlite3
 
-conn = sqlite3.connect("database.sqlite")
+conn = sqlite3.connect("testt.sqlite")
 
 cursor = conn.cursor()        
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (
-                    websiteID INTEGER NOT NULL,
                     URL text NOT NULL,
                     title text,
                     content text,
                     last_crawl DATETIME,
-                    PRIMARY KEY (websiteID,URL))"""
+                    PRIMARY KEY (URL))"""
 
 cursor.execute(createWebsites)
+
+createwebID = """CREATE TABLE IF NOT EXISTS webID (
+                    websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    URL text NOT NULL)"""
+
+cursor.execute(createwebID)
 
 createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
                     keywordID INTEGER PRIMARY KEY AUTOINCREMENT,
