@@ -1,5 +1,3 @@
-# execute all scraping here
-
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -70,9 +68,6 @@ class scraper():
         # get html and url from crawler to extract contents from website and push to db
         if not depth: depth=[None]
 
-        # push domain to domain db
-        # self.push_domain(self.extractDomain(rooturl))
-
         for html,url in self.crawler.run(rooturl,depth[0]):
             title = self.get_title(html)
             content = self.get_contents(html)
@@ -84,8 +79,6 @@ class scraper():
 
             stop = timeit.default_timer()
             print("crawled "+url+" in ",stop-self.crawler.start)
-        # for domain in self.crawler.externalLink:
-        #     self.push_domain(self.extractDomain(domain))
 
         self.db.close_conn()
     
