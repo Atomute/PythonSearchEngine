@@ -2,21 +2,16 @@ import sqlite3
 
 conn = sqlite3.connect("testt.sqlite")
 
-cursor = conn.cursor()        
+cursor = conn.cursor()  
+
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (
-                    URL text NOT NULL,
+                    websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    URL text,
                     title text,
                     content text,
-                    last_crawl DATETIME,
-                    PRIMARY KEY (URL))"""
+                    last_crawl DATETIME)"""
 
 cursor.execute(createWebsites)
-
-createwebID = """CREATE TABLE IF NOT EXISTS webID (
-                    websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    URL text NOT NULL)"""
-
-cursor.execute(createwebID)
 
 createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
                     keywordID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,6 +20,13 @@ createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
                     count int)"""
 
 cursor.execute(createkeywords)
+
+createrefLink = """CREATE TABLE IF NOT EXISTS reflink (
+                    websiteID INTEGER,
+                    count INTEGER,
+                    FOREIGN KEY (websiteID) REFERENCES websites(websiteID) )"""
+
+cursor.execute(createrefLink)
 
 conn.commit()
 conn.close()

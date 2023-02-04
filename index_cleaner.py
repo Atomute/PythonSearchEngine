@@ -16,7 +16,6 @@ class Cleaning:
         return self.content.lower()
 
     def Remove_uni(self):
-
         self.content = re.sub(r"(@\[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)|^rt|http.+?", "", self.Normalize())
         return self.content 
 

@@ -45,34 +45,38 @@ class scraper():
 
         return answer
 
-    def pushtoDB(self,value):
+    def pushtoDB(self,value,url):
         # push data in to database
-        self.db.insert_websites(value)
+        if ("{}".format(url),) in self.db.get_column("URL","websites"):
+            self.db.update_websites(value)
+        else:
+            self.db.insert_websites(value)
 
-    def run(self,rooturl):
+    def run(self,rooturl,*depth):
         # main function to execute the program
         # get html and url from crawler to extract contents from website and push to db
-        visited = self.db.get_column("websites","URL")
+        if not depth: depth=[None]
         try:
-            for html,url in self.crawler.run(rooturl):
+            for html,url in self.crawler.run(rooturl,depth[0]):
 
                 title = self.get_title(html)
-                p = self.get_contents(html)
+                content = self.get_contents(html)
 
-                value = (url,title,p,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
                 # print(value)
-                self.pushtoDB(value)
+                self.pushtoDB(value,url)
 
                 stop = timeit.default_timer()
                 print("crawled "+url+" in ",stop-self.crawler.start)
 
             self.db.close_conn()
+            print(len(self.crawler.externalLink))
         except KeyboardInterrupt:
             self.db.close_conn()
         
 if __name__ == "__main__":
-    roots = ["https://gundam.fandom.com/wiki/"]
+    roots = ["https://atomute.github.io/"]
     for root in roots: 
         atomute = scraper()
         atomute.run(root)

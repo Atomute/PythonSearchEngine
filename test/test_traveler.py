@@ -61,5 +61,14 @@ class test_download_url(unittest.TestCase):
         self.traveler.download_url("url")
         mock_requests.get.assert_called_with("url")
 
+class test_exLink(unittest.TestCase):
+    def setUp(self) -> None:
+        return super().setUp()
+    
+    def test_normal(self):
+        pass
+
+    
+
 if __name__ == '__main__':
     unittest.main()  

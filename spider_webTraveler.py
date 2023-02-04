@@ -11,6 +11,10 @@ class webTraveler():
         self.allurl = []
         self.urltovisit = []
         self.visitedurl = {}
+        self.externalLink = []
+
+        self.depth = None
+        self.depthcounter = 0
 
         # tell the crawler to obey the robot.txt
         self.robot = RobotExclusionRulesParser()
@@ -20,6 +24,7 @@ class webTraveler():
 
     def find_links(self,url):
         # find links in each webpages and add to urltovisit list
+        self.depthcounter += 1
         html = self.download_url(url)
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
@@ -29,6 +34,8 @@ class webTraveler():
             fullpath = urljoin(url,path)
 
             if not fullpath.startswith(self.rooturl):
+                # external link in this page
+                self.externalLink.append(fullpath)
                 continue
             if  path == None or "#" in path:
                 continue
@@ -39,19 +46,26 @@ class webTraveler():
     def find_link_duplicate(self,url):
         self.visitedurl[url] += 1
 
+    def exLink(self,url):
+        # find all external link in this webpage
+        
+        pass
+
     def crawl(self,url):
         # crawl to each webpages and download its HTML doc
-
         print("I'm in "+url)
         self.visitedurl[url] = 1
         html = self.download_url(url)
-        self.find_links(url)   
+        if self.depth == None or self.depth > self.depthcounter:
+            self.find_links(url)   
 
         return html
 
-    def run(self,rooturl):
+    def run(self,rooturl,*depth):
         # main function to execute the program
         # it will lead the bot to crawl through the appropiate url
+        if depth:
+            self.depth = depth[0]
         self.rooturl = rooturl
         self.urltovisit.append(rooturl)
         self.robot.fetch(self.rooturl+"robots.txt")
