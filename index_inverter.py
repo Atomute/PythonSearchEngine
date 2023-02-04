@@ -6,7 +6,7 @@ from index_cleaner import Cleaning
 
 class InvertedIndex:
     def __init__(self):
-        self.conn = sqlite3.connect('test.sqlite')
+        self.conn = sqlite3.connect('testt.sl3')
         self.cursor = self.conn.cursor()
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS inverted_index (
@@ -17,6 +17,7 @@ class InvertedIndex:
                 FOREIGN KEY(websiteID) REFERENCES websites(websiteID)
             )
         """)
+        
     def index_websites(self):
         self.cursor.execute("SELECT websiteID, title, content FROM websites")
         websites = self.cursor.fetchall()
