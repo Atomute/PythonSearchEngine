@@ -1,6 +1,6 @@
-from spider_scrapper import *
-from spider_webTraveler import *
-from index_inverter import *
+from spider.spider_scrapper import *
+from spider.spider_webTraveler import *
+from indexer.index_inverter import *
 
 class Runner:
     def __init__(self):
@@ -23,9 +23,9 @@ class Runner:
 
 if __name__ == "__main__":
     runner = Runner()
-    runner.startIndex()
-    # roots = ["https://yugioh.fandom.com/wiki/","https://cardfight.fandom.com/wiki/","https://xenoblade.fandom.com/wiki/","https://zelda.fandom.com/wiki/","https://fireemblem.fandom.com/wiki/","https://pokemon.fandom.com/wiki/"]
-    # runner.startCrawl(roots)
+    # runner.startIndex()
+    roots = ["https://yugioh.fandom.com/wiki/","https://cardfight.fandom.com/wiki/","https://xenoblade.fandom.com/wiki/","https://zelda.fandom.com/wiki/","https://fireemblem.fandom.com/wiki/","https://pokemon.fandom.com/wiki/"]
+    runner.startCrawl(roots)
     
     
 # "https://yugioh.fandom.com/wiki/" "https://cardfight.fandom.com/wiki/" "https://xenoblade.fandom.com/wiki/" "https://zelda.fandom.com/wiki/" "https://fireemblem.fandom.com/wiki/Fire_Emblem_Wiki" "https://pokemon.fandom.com/wiki/"

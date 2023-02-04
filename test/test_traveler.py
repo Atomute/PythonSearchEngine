@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 import sys
 sys.path.insert(1,"./")
-from spider_webTraveler import webTraveler
+from spider.spider_webTraveler import webTraveler
 
 class test_find_links(unittest.TestCase):
     def setUp(self):

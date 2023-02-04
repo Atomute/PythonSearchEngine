@@ -2,7 +2,7 @@ import sqlite3
 import re
 import nltk
 from nltk.tokenize import word_tokenize
-from index_cleaner import Cleaning
+from indexer.index_cleaner import Cleaning
 
 class InvertedIndex:
     def __init__(self):

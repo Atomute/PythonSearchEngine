@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import timeit
 
-from spider_webTraveler import *
-from DB_sqlite3 import *
+from spider.spider_webTraveler import *
+from database.DB_sqlite3 import *
 
 class scraper():
     def __init__(self):

@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin,urlparse
 import timeit
 from robotexclusionrulesparser import RobotExclusionRulesParser
-from DB_sqlite3 import *
+from database.DB_sqlite3 import *
 
 class webTraveler():
     def __init__(self):

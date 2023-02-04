@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock,patch
 import sys
 sys.path.insert(1,"./")
-from spider_scrapper import scraper
+from spider.spider_scrapper import scraper
 
 class test_get_title(unittest.TestCase):
     def setUp(self) -> None:
