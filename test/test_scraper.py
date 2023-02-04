@@ -69,7 +69,6 @@ class test_pushtoDB(unittest.TestCase):
     def setUp(self):
         self.test_scraper = scraper()
     
-    @patch()
     def normalTest(self):
         tester = self.test_scraper.pushtoDB()
 

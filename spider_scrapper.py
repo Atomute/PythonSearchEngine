@@ -29,7 +29,7 @@ class scraper():
     def get_contents(self,html):
         # get all contents under the html tag
         soup = BeautifulSoup(html,'html.parser')
-        ps = soup.find_all()    # this will get every text under HTML tags
+        ps = soup.find_all('body')    # this will get every text under HTML tags
         ans = []
 
         if ps == []: return 

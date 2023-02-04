@@ -1,11 +1,12 @@
 from spider_scrapper import *
 from spider_webTraveler import *
+from index_inverter import *
 
 class Runner:
     def __init__(self):
         pass
 
-    def start(self,root):
+    def startCrawl(self,root):
         try:
             for root in roots: 
                 atomute = scraper()
@@ -15,10 +16,16 @@ class Runner:
             #     atomute.push_domain(atomute.extractDomain(domain))
             atomute.db.close_conn()
 
+    def startIndex(self):
+        II = InvertedIndex()
+        II.index_websites()
+
+
 if __name__ == "__main__":
-    roots = ["https://zelda.fandom.com/wiki/","https://fireemblem.fandom.com/wiki/","https://pokemon.fandom.com/wiki/"]
     runner = Runner()
-    runner.start(roots)
+    runner.startIndex()
+    # roots = ["https://yugioh.fandom.com/wiki/","https://cardfight.fandom.com/wiki/","https://xenoblade.fandom.com/wiki/","https://zelda.fandom.com/wiki/","https://fireemblem.fandom.com/wiki/","https://pokemon.fandom.com/wiki/"]
+    # runner.startCrawl(roots)
     
     
 # "https://yugioh.fandom.com/wiki/" "https://cardfight.fandom.com/wiki/" "https://xenoblade.fandom.com/wiki/" "https://zelda.fandom.com/wiki/" "https://fireemblem.fandom.com/wiki/Fire_Emblem_Wiki" "https://pokemon.fandom.com/wiki/"
