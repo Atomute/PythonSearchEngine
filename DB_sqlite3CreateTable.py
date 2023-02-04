@@ -1,8 +1,10 @@
 import sqlite3
 
-conn = sqlite3.connect("testt.sqlite")
+conn = sqlite3.connect("testt.sl3")
 
 cursor = conn.cursor()  
+
+# cursor.execute("DROP TABLE domain")
 
 createWebsites = """CREATE TABLE IF NOT EXISTS websites (
                     websiteID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,12 +23,12 @@ createkeywords = """CREATE TABLE IF NOT EXISTS keywords (
 
 cursor.execute(createkeywords)
 
-createrefLink = """CREATE TABLE IF NOT EXISTS reflink (
-                    websiteID INTEGER,
-                    count INTEGER,
-                    FOREIGN KEY (websiteID) REFERENCES websites(websiteID) )"""
+createDomain = """CREATE TABLE IF NOT EXISTS domain (
+                    domainID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    domainName text,
+                    count INTEGER )"""
 
-cursor.execute(createrefLink)
+cursor.execute(createDomain)
 
 conn.commit()
 conn.close()

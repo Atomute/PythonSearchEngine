@@ -44,6 +44,11 @@ class scraper():
         if answer.isspace() or answer == '': return
 
         return answer
+    
+    def extractDomain(self,url):
+        # extract domain from url
+        domain = urlparse(url).hostname
+        return domain
 
     def pushtoDB(self,value,url):
         # push data in to database
@@ -52,36 +57,35 @@ class scraper():
         else:
             self.db.insert_websites(value)
 
+    def push_domain(self,domain):
+        if ("{}".format(domain),) in self.db.get_column("domainName","domain"):
+            value = (domain,domain)
+            self.db.update_domain(value)
+        else:
+            value = (domain,1)
+            self.db.insert_domain(value)
+
     def run(self,rooturl,*depth):
         # main function to execute the program
         # get html and url from crawler to extract contents from website and push to db
         if not depth: depth=[None]
-        try:
-            for html,url in self.crawler.run(rooturl,depth[0]):
 
-                title = self.get_title(html)
-                content = self.get_contents(html)
+        # push domain to domain db
+        # self.push_domain(self.extractDomain(rooturl))
 
-                value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        for html,url in self.crawler.run(rooturl,depth[0]):
+            title = self.get_title(html)
+            content = self.get_contents(html)
 
-                # print(value)
-                self.pushtoDB(value,url)
+            value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-                stop = timeit.default_timer()
-                print("crawled "+url+" in ",stop-self.crawler.start)
+            # print(value)
+            self.pushtoDB(value,url)
 
-            self.db.close_conn()
-            print(len(self.crawler.externalLink))
-        except KeyboardInterrupt:
-            self.db.close_conn()
-        
-if __name__ == "__main__":
-    roots = ["https://atomute.github.io/"]
-    for root in roots: 
-        atomute = scraper()
-        atomute.run(root)
+            stop = timeit.default_timer()
+            print("crawled "+url+" in ",stop-self.crawler.start)
+        # for domain in self.crawler.externalLink:
+        #     self.push_domain(self.extractDomain(domain))
 
-""" ["https://quotes.toscrape.com/","https://books.toscrape.com/","https://gundam.fandom.com/wiki/","https://www.35mmc.com/","https://www.sqlite.org/",
-"https://en.wikipedia.org/wiki/","https://www.detectiveconanworld.com/wiki/"]
-"""
+        self.db.close_conn()
     

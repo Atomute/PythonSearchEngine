@@ -1,8 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin,urlparse
 import timeit
 from robotexclusionrulesparser import RobotExclusionRulesParser
+from DB_sqlite3 import *
 
 class webTraveler():
     def __init__(self):
@@ -18,6 +19,7 @@ class webTraveler():
 
         # tell the crawler to obey the robot.txt
         self.robot = RobotExclusionRulesParser()
+        self.db = DB()
 
     def download_url(self,url):
         return requests.get(url).text
@@ -45,11 +47,6 @@ class webTraveler():
 
     def find_link_duplicate(self,url):
         self.visitedurl[url] += 1
-
-    def exLink(self,url):
-        # find all external link in this webpage
-        
-        pass
 
     def crawl(self,url):
         # crawl to each webpages and download its HTML doc

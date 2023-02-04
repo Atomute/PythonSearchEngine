@@ -16,6 +16,14 @@ class DB():
         query = "UPDATE websites SET URL = ?, title = ?, content = ?, last_crawl = ? WHERE URL = ? "
         self.cursor.execute(query, tuple(val))
 
+    def insert_domain(self,value):
+        query = "REPLACE INTO domain (domainName, count) VALUES (?, ?)"
+        self.cursor.execute(query, value)
+
+    def update_domain(self,value):
+        query = "UPDATE domain SET domainName = ?, count = count+1 WHERE domain = ? "
+        self.cursor.execute(query, value)
+
     def insert_keywords(self,value):
         # insert keywords to keywords table
         query = "INSERT INTO keywords VALUES (?, ?, ?)"
