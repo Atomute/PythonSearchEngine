@@ -50,16 +50,16 @@ class scraper():
 
     def pushtoDB(self,value,url):
         # push data in to database
-        if ("{}".format(url),) in self.db.get_column("URL","websites"):
+        if "{}".format(url) in self.db.get_column("websites","URL"):
             self.db.update_websites(value)
         else:
             self.db.insert_websites(value)
 
     def push_domain(self,domain):
-        if ("{}".format(domain),) in self.db.get_column("domainName","domain"):
+        if "{}".format(domain) in self.db.get_column("domain","domainName"):
             value = (domain,domain)
             self.db.update_domain(value)
-        else:
+        else: 
             value = (domain,1)
             self.db.insert_domain(value)
 
@@ -67,6 +67,7 @@ class scraper():
         # main function to execute the program
         # get html and url from crawler to extract contents from website and push to db
         if not depth: depth=[None]
+        self.push_domain(self.extractDomain(rooturl))
 
         for html,url in self.crawler.run(rooturl,depth[0]):
             title = self.get_title(html)

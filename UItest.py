@@ -22,8 +22,8 @@ class SearchEngine(tk.Tk):
         self.results_text.pack()
 
     def on_update(self):
-        #get text from input 
-        pass
+        #get text from input. If no input this will update the entire database
+        query = self.entry.get()
 
     def on_search(self):
         # get text from input 
@@ -36,18 +36,19 @@ class SearchEngine(tk.Tk):
 
     def perform_search(self, query):
         # Connect to the database
-        conn = sqlite3.connect("test.sqlite")
+        conn = sqlite3.connect("testt.sl3")
         c = conn.cursor()
         query = "%" + query + "%"
         #Query Find exact word from user input
-        c.execute("SELECT * FROM websites WHERE content LIKE ?", (query,))
+        c.execute("SELECT * FROM inverted_index WHERE word LIKE ?", (query,))
         
         results = c.fetchall()
 
-        # disconnection database
+        # disconnect database
         conn.close()
 
         return results
+    
     def display_results(self, results):
         print(len(results))
         # Clear the results text widget

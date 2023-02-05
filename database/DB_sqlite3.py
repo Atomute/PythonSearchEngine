@@ -21,7 +21,7 @@ class DB():
         self.cursor.execute(query, value)
 
     def update_domain(self,value):
-        query = "UPDATE domain SET domainName = ?, count = count+1 WHERE domain = ? "
+        query = "UPDATE domain SET domainName = ?, count = count+1 WHERE domainName = ? "
         self.cursor.execute(query, value)
 
     def insert_keywords(self,value):
@@ -34,15 +34,13 @@ class DB():
 
     def get_column(self,table,column):
         # get all item from "name" table
-        self.cursor.execute("SELECT websites.URL FROM websites")
-        return self.cursor.fetchall()
+        self.cursor.execute("SELECT {}.{} FROM {}".format(table,column,table))
+        rows = self.cursor.fetchall()
+        ans = [row[0] for row in rows]
+
+        return ans
 
     def close_conn(self):
         # commit and close database
         self.conn.commit()
         self.conn.close()
-
-# test = DB()
-
-# test.update("websites",(3,'www','bonjour','wooh waaak','today'))
-# test.close_conn()
