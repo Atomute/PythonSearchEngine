@@ -1,8 +1,8 @@
 import sqlite3
 
 class DB():
-    def __init__(self):
-        self.conn = sqlite3.connect("testt.sl3")
+    def __init__(self,database):
+        self.conn = sqlite3.connect(database)
 
         self.cursor = self.conn.cursor()
 
@@ -24,9 +24,10 @@ class DB():
         query = "UPDATE domain SET domainName = ?, count = count+1 WHERE domainName = ? "
         self.cursor.execute(query, value)
 
-    def insert_keywords(self,value):
+    def insert_exlink(self,websiteID,exlink):
         # insert keywords to keywords table
-        query = "INSERT INTO keywords VALUES (?, ?, ?)"
+        value = (websiteID,exlink)
+        query = "INSERT INTO backlinks VALUES (?, ?)"
         self.cursor.execute(query, value)
 
     def remove(self,table,row_ID):
@@ -39,6 +40,18 @@ class DB():
         ans = [row[0] for row in rows]
 
         return ans
+    
+    def get_specElement(self,table,column,url):
+        query = "SELECT * FROM {} WHERE {} = '{}'".format(table,column,url)
+        self.cursor.execute(query)
+        id = self.cursor.fetchall()
+        ans = id[0][0]
+
+        return ans
+
+    def commit(self):
+        # only commit
+        self.conn.commit()
 
     def close_conn(self):
         # commit and close database
