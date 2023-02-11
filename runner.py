@@ -1,20 +1,24 @@
-from spider.spider_scrapper import *
-from spider.spider_webTraveler import *
+import timeit
+
 from indexer.index_inverter import *
+from spider.spider import spider
 
 class Runner:
     def __init__(self):
         pass
 
     def startCrawl(self,root):
+        start = timeit.default_timer()
         try:
             for root in roots: 
-                atomute = scraper()
+                atomute = spider()
                 atomute.run(root,1)
+                atomute.db.close_conn
         except KeyboardInterrupt:
-            # for domain in atomute.crawler.externalLink:
-            #     atomute.push_domain(atomute.extractDomain(domain))
             atomute.db.close_conn()
+
+        stop = timeit.default_timer()
+        print("finished crwaled "+root+"in "+str(stop-start))
 
     def startIndex(self):
         II = InvertedIndex()
@@ -24,7 +28,7 @@ class Runner:
 if __name__ == "__main__":
     runner = Runner()
     # runner.startIndex()
-    roots = ["https://yugioh.fandom.com/wiki/","https://cardfight.fandom.com/wiki/","https://xenoblade.fandom.com/wiki/","https://zelda.fandom.com/wiki/","https://fireemblem.fandom.com/wiki/","https://pokemon.fandom.com/wiki/"]
+    roots = ["https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
     runner.startCrawl(roots)
     
     
