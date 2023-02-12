@@ -65,9 +65,11 @@ class test_get_contents(unittest.TestCase):
 
         self.assertEqual(tester,"Menu This is paragraph This is span")    
 
-class test_get_exlink(unittest.TestCase):
+class test_get_links(unittest.TestCase):
     def setUp(self):
         self.spider = spider()
+        self.spider.rootDomain = "root.com"
+        self.spider.currentURL = "https://www.root.com/"
 
     def test_normal(self):
         tester = self.spider.get_links("url")
@@ -75,39 +77,31 @@ class test_get_exlink(unittest.TestCase):
         self.assertIsInstance(tester,list)
 
     def test_one_link(self):
-        self.spider.currentURL = "https://www.something.com/"
-        tester = self.spider.get_links("<html> <body> <a href='https://www.something.com/firstpage'>something</a> </body> </html>")
+        tester = self.spider.get_links("<html> <body> <a href='https://www.root.com/firstpage'>something</a> </body> </html>")
 
-        self.assertEqual(tester,['https://www.something.com/firstpage'])
+        self.assertEqual(tester,['https://www.root.com/firstpage'])
 
     def test_multiple_link(self):
-        self.spider.currentURL = "https://www.something.com/"
-        tester = self.spider.get_links("<html> <body> <a href='https://www.something.com/firstpage'>something</a> <a href='https://www.something.com/secondpage'>something</a> </body> </html>")
+        tester = self.spider.get_links("<html> <body> <a href='https://www.root.com/firstpage'>something</a> <a href='https://www.root.com/secondpage'>something</a> </body> </html>")
 
-        self.assertEqual(tester,['https://www.something.com/firstpage','https://www.something.com/secondpage'])
+        self.assertEqual(tester,['https://www.root.com/firstpage','https://www.root.com/secondpage'])
 
     def test_numbersign(self):
-        self.spider.currentURL = "https://www.something.com/"
         tester = self.spider.get_links("<a href='#numbersign'>something</a>")
 
         self.assertEqual(tester,[])
 
     def test_notinroot(self):
-        self.spider.root = "https://www.root.com/"
-        self.spider.currentURL = "https://www.root.com/test"
         tester = self.spider.get_links("<a href='https://www.something.com/'>something</a>")
 
         self.assertEqual(tester,[])
 
     def test_no_link(self):
-        self.spider.currentURL = "https://www.something.com/"
         tester = self.spider.get_links("no link here")
 
         self.assertEqual(tester,[])
 
     def test_exlinks(self):
-        self.spider.root = "https://www.root.com/"
-        self.spider.currentURL = "https://www.root.com/test"
         self.spider.get_links("<a href='https://www.something.com/'>something</a>")
         tester = self.spider.exlinks
 
@@ -132,29 +126,21 @@ class test_extractDomain(unittest.TestCase):
 
         self.assertEqual(tester,None)
 
-class test_cleanURL(unittest.TestCase):
-    def setUp(self) -> None:
-        self.spider = spider()
-
-    def test_normal(self):
-        tester = self.spider.cleanURL("https://something.com")
-        self.assertIsInstance(tester,str)
-
     def test_https(self):
-        tester = self.spider.cleanURL("https://something.com/wow")
-        self.assertEqual(tester,"https://something.com")
+        tester = self.spider.extractDomain("https://something.com/wow")
+        self.assertEqual(tester,"something.com")
 
     def test_http(self):
-        tester = self.spider.cleanURL("http://something.com/wow")
-        self.assertEqual(tester,"http://something.com")
+        tester = self.spider.extractDomain("http://something.com/wow")
+        self.assertEqual(tester,"something.com")
 
     def test_httpsWWW(self):
-        tester = self.spider.cleanURL("https://www.something.com/wow/wee")
-        self.assertEqual(tester,"https://something.com")
+        tester = self.spider.extractDomain("https://www.something.com/wow/wee")
+        self.assertEqual(tester,"something.com")
 
     def test_httpWWW(self):
-        tester = self.spider.cleanURL("http://www.something.com/wow/woo")
-        self.assertEqual(tester,"http://something.com")
+        tester = self.spider.extractDomain("http://www.something.com/wow/woo")
+        self.assertEqual(tester,"something.com")
 
 # class test_pushtoDB(unittest.TestCase):
 #     def setUp(self):

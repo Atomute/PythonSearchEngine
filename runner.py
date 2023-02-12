@@ -1,7 +1,8 @@
 import timeit
 
-from indexer.index_inverter import *
+# from indexer.index_inverter import *
 from spider.spider import spider
+from spider.spider_updater import updater
 
 class Runner:
     def __init__(self):
@@ -13,23 +14,21 @@ class Runner:
             for root in roots: 
                 atomute = spider()
                 atomute.run(root,1)
-                atomute.db.close_conn
+                atomute.push_exlinkDomain()
+                atomute.db.close_conn()
         except KeyboardInterrupt:
             atomute.db.close_conn()
 
         stop = timeit.default_timer()
-        print("finished crwaled "+root+"in "+str(stop-start))
-
-    def startIndex(self):
-        II = InvertedIndex()
-        II.index_websites()
-
+        print("finished crawled "+root+"in "+str(stop-start))
 
 if __name__ == "__main__":
-    runner = Runner()
-    # runner.startIndex()
-    roots = ["https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
-    runner.startCrawl(roots)
+    # runner = Runner()
+    # roots = ["https://atomute.github.io/","https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
+    # runner.startCrawl(roots)
+
+    test = updater()
+    test.removeone("https://atomute.github.io/")
     
     
 # "https://yugioh.fandom.com/wiki/" "https://cardfight.fandom.com/wiki/" "https://xenoblade.fandom.com/wiki/" "https://zelda.fandom.com/wiki/" "https://fireemblem.fandom.com/wiki/Fire_Emblem_Wiki" "https://pokemon.fandom.com/wiki/"

@@ -1,9 +1,14 @@
+# this will push data to websites backlinks and Domain of the root 
+
 from urllib.parse import urljoin,urlparse
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime
 import timeit
 from robotexclusionrulesparser import RobotExclusionRulesParser
+import socket
+from ip2geotools.databases.noncommercial import DbIpCity
+from geopy.distance import distance
 
 from database.DB_sqlite3 import *
 
@@ -43,12 +48,10 @@ class spider:
         title = soup.find('title')
 
         if title == None: return
-
-        titleText = title.text
         
-        if title.text.isspace() or titleText == '': return
+        if title.text.isspace() or title.text == '': return
 
-        return titleText.strip()
+        return title.text.strip()
 
     def get_links(self,html):
         # find links in each webpages and add to urltovisit list
@@ -61,7 +64,7 @@ class spider:
             path = link.get('href')
             fullpath = urljoin(self.currentURL,path)
 
-            if not self.root[:len(self.root)-1] in fullpath:
+            if not self.rootDomain in fullpath:
                 # external link in this page
                 self.exlinks.append(fullpath)
                 continue
@@ -71,15 +74,27 @@ class spider:
             self.urltovisit.append(fullpath)
         return self.urltovisit
     
-    def get_location(self):
-        pass
-
+    def get_location(self,domain):
+        try:
+            ip = socket.gethostbyname(domain)
+            res = DbIpCity.get(ip, api_key="free")
+            return "{}, {}, {}".format(res.city,res.region,res.country)
+        except socket.gaierror:
+            try:
+                domain = "www."+domain
+                ip = socket.gethostbyname(domain)
+                res = DbIpCity.get(ip, api_key="free")
+                return ["{}, {}, {}".format(res.city,res.region,res.country),domain]
+            except socket.gaierror:
+                return "-"
+    
     def push_domain(self,domain):
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
-            value = (domain,domain)
-            self.db.update_domain(value)
+            self.db.update_domain(domain)
         else: 
-            value = (domain,1)
+            location = self.get_location(domain)
+            if type(location) == list: domain = location[1];location = location[0]
+            value = (domain,location,1)
             self.db.insert_domain(value)
         self.db.commit()
 
@@ -103,31 +118,25 @@ class spider:
 
         self.exlinks = []
 
-    def push_exlinkDomain(self,urls):
+    def push_exlinkDomain(self):
         # push external link domain to database
+        print("pushing external link to domain table")
+        urls = self.db.get_column("backlinks","backlink")
+        progresscounter = 0
         for url in urls:
-            cleanurl = self.cleanURL(url)
-            domain = self.extractDomain(cleanurl)
-            self.push_domain(domain)
+            progresscounter += 1
+            print(f"{progresscounter}/{len(urls)}",end="\r")
 
-    def cleanURL(self,url):
-        if url.startswith("https"):
             domain = self.extractDomain(url)
-            if domain.startswith("www."):
-                return "https://"+domain[4:]
-            else:
-                return "https://"+domain
-        else:
-            domain = self.extractDomain(url)
-            if domain.startswith("www."):
-                return "http://"+domain[4:]
-            else:
-                return "http://"+domain
+            self.push_domain(domain)
 
     def extractDomain(self,url):
         # extract domain from url
         domain = urlparse(url).hostname
-        return domain
+        if domain != None and domain.startswith("www."):
+            return domain[4:]
+        else:
+            return domain
         
     def onelink(self,html):
         content = self.get_contents(html)
@@ -138,8 +147,6 @@ class spider:
             self.get_links(html)
 
         self.push_websites(value)
-        # self.push_exlinkDomain(self.exlinks)
-        self.push_backlinks(self.exlinks)
 
     def run(self,root,*depth):
         # scrape one root at choosen depth
@@ -148,13 +155,14 @@ class spider:
         self.depth = depth
         if not depth: self.depth=None
 
-        self.root = self.cleanURL(root)
         self.urltovisit.append(root)
-        if not self.root in self.db.get_column("domain","domainName"): 
-            rootDomain = self.extractDomain(self.root)
-            self.push_domain(rootDomain)
-        self.robot.fetch(root+"robots.txt")
 
+        self.rootDomain = self.extractDomain(root)
+        if not self.rootDomain in self.db.get_column("domain","domainName"): 
+            self.push_domain(self.rootDomain)
+
+        self.robot.fetch(root+"robots.txt")
+        
         # loop to visit the choosen link and scraped them
         while self.urltovisit:
             self.currentURL = self.urltovisit.pop()
@@ -167,6 +175,7 @@ class spider:
 
             html = requests.get(self.currentURL).text
             self.onelink(html)
+            self.push_backlinks(self.exlinks)
 
             self.visitedURL.append(self.currentURL)
 

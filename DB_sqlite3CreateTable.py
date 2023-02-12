@@ -18,6 +18,7 @@ cursor.execute(createWebsites)
 createDomain = """CREATE TABLE IF NOT EXISTS domain (
                     domainID INTEGER PRIMARY KEY AUTOINCREMENT,
                     domainName text,
+                    domainLocation text,
                     count INTEGER )"""
 
 cursor.execute(createDomain)
@@ -25,9 +26,17 @@ cursor.execute(createDomain)
 createDomain = """CREATE TABLE IF NOT EXISTS backlinks (
                     websiteID INTEGER,
                     backlink text,
-                    FOREIGN KEY (websiteID) REFERENCES websites(websiteID) )"""
+                    FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE )"""
 
 cursor.execute(createDomain)
+
+createDomainLink = """CREATE TABLE IF NOT EXISTS DomainLink (
+                    domainID INTEGER,
+                    websiteID INTEGER,
+                    FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
+                    FOREIGN KEY (domainID) REFERENCES domain(domainID) ON DELETE CASCADE )"""
+
+cursor.execute(createDomainLink)
 
 conn.commit()
 conn.close()
