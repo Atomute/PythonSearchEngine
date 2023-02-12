@@ -71,6 +71,9 @@ class spider:
             self.urltovisit.append(fullpath)
         return self.urltovisit
     
+    def get_location(self):
+        pass
+
     def push_domain(self,domain):
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
             value = (domain,domain)
