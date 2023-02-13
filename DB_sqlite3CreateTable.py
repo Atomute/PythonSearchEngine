@@ -23,16 +23,16 @@ createDomain = """CREATE TABLE IF NOT EXISTS domain (
 
 cursor.execute(createDomain)
 
-createDomain = """CREATE TABLE IF NOT EXISTS backlinks (
+createbacklinks = """CREATE TABLE IF NOT EXISTS backlinks (
                     websiteID INTEGER,
                     backlink text,
                     FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE )"""
 
-cursor.execute(createDomain)
+cursor.execute(createbacklinks)
 
 createDomainLink = """CREATE TABLE IF NOT EXISTS DomainLink (
-                    domainID INTEGER,
                     websiteID INTEGER,
+                    domainID INTEGER,
                     FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
                     FOREIGN KEY (domainID) REFERENCES domain(domainID) ON DELETE CASCADE )"""
 

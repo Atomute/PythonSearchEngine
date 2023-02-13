@@ -32,8 +32,22 @@ class DB():
         query = "INSERT INTO backlinks VALUES (?, ?)"
         self.cursor.execute(query, value)
 
+    def insert_domainlink(self,websitID,domainID):
+        query = """INSERT INTO DomainLink VALUES (?, ?)"""
+        value = (websitID,domainID)
+
+        self.cursor.execute(query,value)
+
     def remove(self,table,row_ID):
         pass
+
+    def get_table(self,table):
+        # get all item in table
+        self.cursor.execute("SELECT * FROM {}".format(table))
+        rows = self.cursor.fetchall()
+        ans = [row for row in rows]
+
+        return ans
 
     def get_column(self,table,column):
         # get all item from "name" table
@@ -51,13 +65,16 @@ class DB():
 
         return ans
     
-    def get_specElement(self,table,column,url):
+    def get_ID(self,table,column,url):
         query = "SELECT * FROM {} WHERE {} = '{}'".format(table,column,url)
         self.cursor.execute(query)
         id = self.cursor.fetchall()
         ans = id[0][0]
 
         return ans
+    
+    def get_domainCount():
+        pass
     
     def dump_record(self,table,column,value):
         query = "DELETE FROM {} WHERE {}={}".format(table,column,value)

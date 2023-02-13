@@ -92,11 +92,13 @@ class spider:
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
             self.db.update_domain(domain)
         else: 
-            location = self.get_location(domain)
+            # location = self.get_location(domain)
+            location = "-"
             if type(location) == list: domain = location[1];location = location[0]
             value = (domain,location,1)
             self.db.insert_domain(value)
         self.db.commit()
+        return domain
 
     def push_websites(self,value):
         # push data into websites table
@@ -108,7 +110,7 @@ class spider:
 
     def push_backlinks(self,urls):
         # push all exlink in a page to databse and clear it
-        websiteID = self.db.get_specElement("websites","URL",self.currentURL)
+        websiteID = self.db.get_ID("websites","URL",self.currentURL)
         if websiteID in self.db.get_column("backlinks","websiteID"): 
             self.exlinks = []
             return
@@ -121,14 +123,21 @@ class spider:
     def push_exlinkDomain(self):
         # push external link domain to database
         print("pushing external link to domain table")
-        urls = self.db.get_column("backlinks","backlink")
+        backlinks = self.db.get_table("backlinks")
         progresscounter = 0
-        for url in urls:
+        for row in backlinks:
+            websiteID = row[0]
+            url = row[1]
             progresscounter += 1
-            print(f"{progresscounter}/{len(urls)}",end="\r")
+            print(f"{progresscounter}/{len(backlinks)}",end="\r")
 
             domain = self.extractDomain(url)
-            self.push_domain(domain)
+            realdomain = self.push_domain(domain)
+            domainID = self.db.get_ID("domain","domainName",realdomain)
+            self.push_DomainLink(websiteID,domainID)
+
+    def push_DomainLink(self,websiteID,domainID):
+        self.db.insert_domainlink(websiteID,domainID)
 
     def extractDomain(self,url):
         # extract domain from url

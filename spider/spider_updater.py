@@ -32,9 +32,8 @@ class updater:
         pass
 
     def removeone(self,url):
-        websiteID = self.db.get_specElement("websites","URL",url)
+        websiteID = self.db.get_ID("websites","URL",url)
         self.db.dump_record("websites","websiteID",websiteID)
-        # self.db.dump_record("backlinks","websiteID",websiteID)
 
         self.db.close_conn()
 
