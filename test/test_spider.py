@@ -8,7 +8,7 @@ class test_get_title(unittest.TestCase):
     def setUp(self) -> None:
         self.test_scraper = spider()
 
-    def test_normal(self):
+    def test_normal(self,):
         self.assertIsInstance(self.test_scraper.get_title("<html> <title>This is title</title> </html>"),str)
 
     def test_notitle(self):
@@ -144,16 +144,27 @@ class test_extractDomain(unittest.TestCase):
 
 # class test_pushtoDB(unittest.TestCase):
 #     def setUp(self):
-#         self.test_scraper = scraper()
+#         self.test_spider = spider()
     
 #     def normalTest(self):
-#         tester = self.test_scraper.pushtoDB()
+#         tester = self.test_spider.push_websites()
 
 #     def wrongtableTest():
 #         pass
 
 #     def wrongValueTest():
 #         pass
+
+class test_domain_counter(unittest.TestCase):
+    def setUp(self) -> None:
+        self.spider = spider()
+
+    @patch('spider.db.get_column')
+    def test_normal(self,mock_get_column):
+        mock_get_column.return_value = []
+
+    def test_(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()  

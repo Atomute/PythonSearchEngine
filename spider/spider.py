@@ -9,6 +9,7 @@ from robotexclusionrulesparser import RobotExclusionRulesParser
 import socket
 from ip2geotools.databases.noncommercial import DbIpCity
 from geopy.distance import distance
+from collections import Counter
 
 from database.DB_sqlite3 import *
 
@@ -88,14 +89,12 @@ class spider:
             except socket.gaierror:
                 return "-"
     
-    def push_domain(self,domain):
+    def push_domain(self,domain,*count):
+        if not count: count=[1]
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
-            self.db.update_domain(domain)
+            self.db.update_domain(domain,count[0])
         else: 
-            # location = self.get_location(domain)
-            location = "-"
-            if type(location) == list: domain = location[1];location = location[0]
-            value = (domain,location,1)
+            value = (domain,1)
             self.db.insert_domain(value)
         self.db.commit()
         return domain
@@ -124,20 +123,22 @@ class spider:
         # push external link domain to database
         print("pushing external link to domain table")
         backlinks = self.db.get_table("backlinks")
+        lastWebID = self.db.get_column("Websites_Domain","websiteID")
+        if lastWebID == []: lastWebID=[0]
+        lastWebID = lastWebID[-1]
+
         progresscounter = 0
         for row in backlinks:
             websiteID = row[0]
             url = row[1]
             progresscounter += 1
             print(f"{progresscounter}/{len(backlinks)}",end="\r")
+            if websiteID<lastWebID: continue
 
             domain = self.extractDomain(url)
-            realdomain = self.push_domain(domain)
-            domainID = self.db.get_ID("domain","domainName",realdomain)
-            self.push_DomainLink(websiteID,domainID)
-
-    def push_DomainLink(self,websiteID,domainID):
-        self.db.insert_domainlink(websiteID,domainID)
+            self.push_domain(domain)
+            domainID = self.db.get_ID("domain","domainName",domain)
+            self.db.insert_Websites_Domain(websiteID,domainID)
 
     def extractDomain(self,url):
         # extract domain from url
@@ -147,15 +148,63 @@ class spider:
         else:
             return domain
         
-    def onelink(self,html):
+    def updateone(self,url):
+        # simply delete one entry and scrape it again or if the url is not in table, will scrape it 
+        if url in self.db.get_column("websites","URL"):
+            self.removeone(url)
+            
+        self.run(url,1)
+        self.push_exlinkDomain()
+        self.domain_counter()
+
+    def updateall(self):
+        # simply delete all entry and scrape it all again
+        urls = self.db.get_column("websites","URL")
+        self.db.dump_table()
+        for url in urls:
+            self.run(url,0)
+
+        self.push_exlinkDomain()
+
+    def onelink(self,url):
+        self.currentURL = url
+        html = requests.get(url).text
         content = self.get_contents(html)
         title = self.get_title(html)
-        value = (self.currentURL,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-        if self.depth == None or self.depth[0]>self.currentDepth:
-            self.get_links(html)
+        value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         self.push_websites(value)
+        return html
+    
+    def removeone(self,url):
+        websiteID = self.db.get_ID("websites","URL",url)
+        self.db.dump_record("websites","websiteID",websiteID)
+
+        domain = self.extractDomain(url)
+        if domain in self.db.get_column("domain","domainName"): 
+            count = self.db.get_column_specific("domain","count",domain,"domainName")[0]
+            if count-1 == 0: 
+                domainID = self.db.get_ID("domain","domainName",domain)
+                self.db.dump_record("domain","domainID",domainID)
+            else: 
+                self.push_domain(domain,count-1)
+        self.domain_counter()
+        self.db.commit()
+
+    def removeall(self):
+        self.db.dump_table()
+
+    def domain_counter(self):
+        domains = self.db.get_column("Websites_Domain","domainID")
+        counter = dict(Counter(domains))
+        oriDomain = self.db.get_column("domain","domainID")
+
+        for domainID in oriDomain:
+            if domainID in counter:
+                self.db.cursor.execute("UPDATE domain SET count = {} WHERE domainID = {}".format(counter[domainID],domainID))
+            else:
+                self.db.dump_record("domain","domainID",domainID)
+        self.db.commit()
 
     def run(self,root,*depth):
         # scrape one root at choosen depth
@@ -165,11 +214,12 @@ class spider:
         if not depth: self.depth=None
 
         self.urltovisit.append(root)
+        self.exlinks.append(root)
 
         self.rootDomain = self.extractDomain(root)
         if not self.rootDomain in self.db.get_column("domain","domainName"): 
             self.push_domain(self.rootDomain)
-
+        
         self.robot.fetch(root+"robots.txt")
         
         # loop to visit the choosen link and scraped them
@@ -182,8 +232,9 @@ class spider:
 
             startTimer = timeit.default_timer() # timer
 
-            html = requests.get(self.currentURL).text
-            self.onelink(html)
+            html = self.onelink(self.currentURL)
+            if self.depth == None or self.depth[0]>self.currentDepth:
+                self.get_links(html)
             self.push_backlinks(self.exlinks)
 
             self.visitedURL.append(self.currentURL)
