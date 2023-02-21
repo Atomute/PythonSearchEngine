@@ -1,11 +1,14 @@
 import unittest
 from unittest.mock import MagicMock,patch
+import os
 import sys
+from datetime import datetime
 sys.path.insert(1,"./")
 from spider.spider import spider
+from database.DB_sqlite3 import DB
 
 class test_get_title(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.test_scraper = spider()
 
     def test_normal(self,):
@@ -142,28 +145,71 @@ class test_extractDomain(unittest.TestCase):
         tester = self.spider.extractDomain("http://www.something.com/wow/woo")
         self.assertEqual(tester,"something.com")
 
-# class test_pushtoDB(unittest.TestCase):
-#     def setUp(self):
-#         self.test_spider = spider()
-    
-#     def normalTest(self):
-#         tester = self.test_spider.push_websites()
+class test_push_domain(unittest.TestCase):
+    def setUp(self) -> None:
+        self.dbName = "unittesting.sqlite3"
+        self.spider = spider()
+        self.spider.db = DB(self.dbName)
 
-#     def wrongtableTest():
-#         pass
+    @patch('database.DB_sqlite3.DB.update_domain')
+    @patch('database.DB_sqlite3.DB.get_column')
+    def test_domain_already_in_database(self,mock_get_column,mock_update_domain):
+        domain = "something.com"
+        mock_get_column.return_value = ["something.com","wowwee.com"]
+        self.spider.push_domain(domain)
+        mock_update_domain.assert_called_with(domain,1)
 
-#     def wrongValueTest():
-#         pass
+    @patch('database.DB_sqlite3.DB.insert_domain')
+    @patch('database.DB_sqlite3.DB.get_column')
+    def test_domain_already_not_in_database(self,mock_get_column,mock_insert_domain):
+        domain = "sample.com"
+        mock_get_column.return_value = ["something.com","wowwee.com"]
+        self.spider.push_domain(domain)
+        mock_insert_domain.assert_called_with(domain)
+
+    def tearDown(self):
+        self.spider.db.close_conn()
+        os.remove(self.dbName)
+
+class test_push_websites(unittest.TestCase):
+    def setUp(self) -> None:
+        self.dbName = "unittesting.sqlite3"
+        self.spider = spider()
+        self.spider.db = DB(self.dbName)
+        self.value = ("url","title","content",datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    @patch('database.DB_sqlite3.DB.update_websites')
+    @patch('database.DB_sqlite3.DB.get_column')
+    def test_websites_already_in_database(self,mock_get_column,mock_update_websites):
+        url = "https://www.something.com"
+        mock_get_column.return_value = ["https://www.something.com","https://wowwee.com"]
+        self.spider.push_websites(self.value,url)
+        mock_update_websites.assert_called_with(self.value)
+
+    @patch('database.DB_sqlite3.DB.insert_websites')
+    @patch('database.DB_sqlite3.DB.get_column')
+    def test_domain_already_not_in_database(self,mock_get_column,mock_insert_websites):
+        url = "https://www.nothing.com"
+        mock_get_column.return_value = ["https://something.com","https://wowwee.com"]
+        self.spider.push_websites(self.value,url)
+        mock_insert_websites.assert_called_with(self.value)
+
+    def tearDown(self) -> None:
+        self.spider.db.close_conn()
+        os.remove(self.dbName)
 
 class test_domain_counter(unittest.TestCase):
     def setUp(self) -> None:
         self.spider = spider()
 
-    @patch('spider.db.get_column')
+    @patch('database.DB_sqlite3.DB.get_column')
     def test_normal(self,mock_get_column):
         mock_get_column.return_value = []
 
     def test_(self):
+        pass
+
+    def test_something(self):
         pass
 
 if __name__ == '__main__':

@@ -94,14 +94,13 @@ class spider:
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
             self.db.update_domain(domain,count[0])
         else: 
-            value = (domain,1)
-            self.db.insert_domain(value)
+            self.db.insert_domain(domain)
         self.db.commit()
         return domain
 
-    def push_websites(self,value):
+    def push_websites(self,value,url):
         # push data into websites table
-        if "{}".format(self.currentURL) in self.db.get_column("websites","URL"):
+        if "{}".format(url) in self.db.get_column("websites","URL"):
             self.db.update_websites(value)
         else:
             self.db.insert_websites(value)
@@ -173,7 +172,10 @@ class spider:
         title = self.get_title(html)
         value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-        self.push_websites(value)
+        if self.depth == None or self.depth[0]>self.currentDepth:
+            self.get_links(html)
+
+        self.push_websites(value,self.currentURL)
         return html
     
     def removeone(self,url):
@@ -232,12 +234,11 @@ class spider:
 
             startTimer = timeit.default_timer() # timer
 
-            html = self.onelink(self.currentURL)
-            if self.depth == None or self.depth[0]>self.currentDepth:
-                self.get_links(html)
+            self.onelink(self.currentURL)
             self.push_backlinks(self.exlinks)
 
             self.visitedURL.append(self.currentURL)
 
             stopTimer = timeit.default_timer()
             print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
+        self.currentDepth = 0

@@ -1,7 +1,9 @@
 import sqlite3
+import database.DB_sqlite3CreateTable as DB_sqlite3CreateTable
 
 class DB():
     def __init__(self,database):
+        DB_sqlite3CreateTable.create_database(database)
         self.conn = sqlite3.connect(database)
         self.cursor = self.conn.cursor()
 
@@ -17,7 +19,8 @@ class DB():
         query = "UPDATE websites SET URL = ?, title = ?, content = ?, last_crawl = ? WHERE URL = ? "
         self.cursor.execute(query, tuple(val))
 
-    def insert_domain(self,value):
+    def insert_domain(self,domain):
+        value = (domain,1)
         query = "REPLACE INTO domain (domainName, count) VALUES (?, ?)"
         self.cursor.execute(query, value)
 

@@ -3,17 +3,21 @@ import timeit
 # from indexer.index_inverter import *
 from spider.spider import spider
 from database.DB_sqlite3 import DB
+from indexer.index_inverter import InvertedIndex
+from indexer.index_Country import Getcountry
 
 class Runner:
     def __init__(self):
         self.spider = spider()
         self.db = DB("testt.sqlite3")
+        self.indexer = InvertedIndex()
+        self.country = Getcountry()
 
     def startCrawl(self,roots):
         start = timeit.default_timer()
         try:
             for root in roots: 
-                self.spider.run(root)
+                self.spider.run(root,1)
                 self.spider.push_exlinkDomain()
                 self.spider.domain_counter()
             self.spider.db.close_conn()
@@ -29,13 +33,19 @@ class Runner:
 
     def updateone(self,url):
         self.spider.updateone(url)
-        self.spider.db.close_conn()
+        self.db.close_conn()
+        self.indexer.indexOneWebsite(url)
+
+    def index(self):
+        self.indexer.index_websites()
+        self.country.find_c_websites()
 
 if __name__ == "__main__":
     runner = Runner()
 
-    # roots = ["https://atomute.github.io/","https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
+    # roots = ["https://atomute.github.io/","https://www.detectiveconanworld.com/wiki/","https://atomute.github.io/","https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
     # runner.startCrawl(roots)
+    # runner.index()
 
     runner.spider.updateone("https://atomute.github.io/")
     
