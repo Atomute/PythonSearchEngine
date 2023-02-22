@@ -198,6 +198,36 @@ class test_push_websites(unittest.TestCase):
         self.spider.db.close_conn()
         os.remove(self.dbName)
 
+class test_push_backlinks(unittest.TestCase):
+    def setUp(self):
+        self.dbName = "unittesting.sqlite3"
+        self.spider = spider()
+        self.spider.db = DB(self.dbName)
+        self.spider.currentURL = "currentURL"
+
+    @patch('database.DB_sqlite3.DB.get_column')
+    @patch('database.DB_sqlite3.DB.get_ID')
+    def test_website_is_in_backlinks(self,mock_get_ID,mock_get_column):
+        self.spider.exlinks = ["something"]
+        mock_get_ID.return_value = 1
+        mock_get_column.return_value = [1,2,3]
+        self.spider.push_backlinks(self.spider.exlinks)
+        self.assertEqual(self.spider.exlinks,[])
+
+    @patch('database.DB_sqlite3.DB.insert_exlink')
+    @patch('database.DB_sqlite3.DB.get_column')
+    @patch('database.DB_sqlite3.DB.get_ID')
+    def test_website_is_not_in_backlinks(self,mock_get_ID,mock_get_column,mock_insert_exlink):
+        self.spider.exlinks = ["something"]
+        mock_get_ID.return_value = 1
+        mock_get_column.return_value = [2,3]
+        self.spider.push_backlinks(self.spider.exlinks)
+        mock_insert_exlink.assert_called_with(1,"something")
+
+    def tearDown(self):
+        self.spider.db.close_conn()
+        os.remove(self.dbName)
+
 class test_domain_counter(unittest.TestCase):
     def setUp(self) -> None:
         self.spider = spider()
