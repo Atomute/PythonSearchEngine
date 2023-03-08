@@ -9,7 +9,7 @@ import string
 class Cleaning:
     def __init__(self):
         pass
-        #print(self.content)
+        
     def Normalize(self,doc):
         return doc.lower()
 

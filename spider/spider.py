@@ -2,6 +2,7 @@
 
 from urllib.parse import urljoin,urlparse
 from bs4 import BeautifulSoup
+from bs4.element import Comment
 import requests
 from datetime import datetime
 import timeit
@@ -24,23 +25,21 @@ class spider:
         self.db = DB("testt.sqlite3")
         self.robot = RobotExclusionRulesParser()
 
-    def get_contents(self,html):
-        # get all contents under body tag
-        soup = BeautifulSoup(html,'html.parser')
-        ps = soup.find_all('body')    # this will get every text under HTML tags
-        ans = []
+    def tag_visible(self,element):
+        if element.parent.name in ['style', 'script', 'head', 'title', 'meta', '[document]']:
+            return False
+        if isinstance(element, Comment):
+            return False
+        return True
 
-        if ps == []: return 
-        for p in ps:
-            textp = p.text.strip()
-            if textp.isspace(): continue
-            listp = textp.splitlines()
-            strp = ' '.join(listp)
-            ans.append(strp)
+    def get_contents(self,body):
+        soup = BeautifulSoup(body, 'html.parser')
+        texts = soup.findAll(text=True)
+        visible_texts = filter(self.tag_visible, texts)  
+        answer = u" ".join(t.strip() for t in visible_texts).strip()
 
-        answer = " ".join(ans)
         if answer.isspace() or answer == '': return
-
+        
         return answer
 
     def get_title(self,html):

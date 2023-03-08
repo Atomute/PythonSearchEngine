@@ -5,6 +5,7 @@ from spider.spider import spider
 from database.DB_sqlite3 import DB
 from indexer.index_inverter import InvertedIndex
 from indexer.index_Country import Getcountry
+from search.main import searcher
 
 class Runner:
     def __init__(self):
@@ -41,13 +42,15 @@ class Runner:
         self.country.find_c_websites()
 
 if __name__ == "__main__":
-    runner = Runner()
+    test = searcher()
+    test.search("something free love")
+    # runner = Runner()
 
-    # roots = ["https://atomute.github.io/","https://www.detectiveconanworld.com/wiki/","https://atomute.github.io/","https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
+    # roots = ["https://en.wikipedia.org/wiki/","https://atomute.github.io/","https://www.detectiveconanworld.com/wiki/","https://atomute.github.io/","https://yugioh.fandom.com/","https://cardfight.fandom.com/","https://xenoblade.fandom.com/","https://zelda.fandom.com/","https://fireemblem.fandom.com/","https://pokemon.fandom.com/"]
     # runner.startCrawl(roots)
     # runner.index()
 
-    runner.spider.updateone("https://atomute.github.io/")
+    # runner.spider.updateone("https://atomute.github.io/")
     
 # "https://yugioh.fandom.com/wiki/" "https://cardfight.fandom.com/wiki/" "https://xenoblade.fandom.com/wiki/" "https://zelda.fandom.com/wiki/" "https://fireemblem.fandom.com/wiki/Fire_Emblem_Wiki" "https://pokemon.fandom.com/wiki/"
 

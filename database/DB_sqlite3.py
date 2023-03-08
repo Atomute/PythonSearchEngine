@@ -59,7 +59,7 @@ class DB():
         return ans
 
     def get_column(self,table,column):
-        # get all item from "name" table
+        # get all item from one specify column and specify table
         self.cursor.execute("SELECT {}.{} FROM {} ORDER BY {}".format(table,column,table,column))
         rows = self.cursor.fetchall()
         ans = [row[0] for row in rows]
@@ -109,3 +109,6 @@ class DB():
         # commit and close database
         self.conn.commit()
         self.conn.close()
+
+    def for_test():
+        pass
