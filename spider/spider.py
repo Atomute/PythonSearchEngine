@@ -11,11 +11,14 @@ import socket
 from ip2geotools.databases.noncommercial import DbIpCity
 from geopy.distance import distance
 from collections import Counter
+from time import sleep
 
 from database.DB_sqlite3 import *
 
 class spider:
     def __init__(self):
+        self.pause = False
+
         self.root = ""
         self.urltovisit = []
         self.visitedURL = []
@@ -55,7 +58,7 @@ class spider:
 
     def get_links(self,html):
         # find links in each webpages and add to urltovisit list
-        self.currentDepth += 1
+        self.currentDepth -= 1
 
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
@@ -171,7 +174,7 @@ class spider:
         title = self.get_title(html)
         value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-        if self.depth == None or self.depth[0]>self.currentDepth:
+        if self.depth == None or self.currentDepth != 0:
             self.get_links(html)
 
         self.push_websites(value,self.currentURL)
@@ -207,12 +210,16 @@ class spider:
                 self.db.dump_record("domain","domainID",domainID)
         self.db.commit()
 
+    def pauserun(self):
+        self.pause = True
+
     def run(self,root,*depth):
         # scrape one root at choosen depth
 
         # initial setup
         self.depth = depth
         if not depth: self.depth=None
+        else: self.currentDepth = self.depth[0]
 
         self.urltovisit.append(root)
         self.exlinks.append(root)
@@ -225,10 +232,15 @@ class spider:
         
         # loop to visit the choosen link and scraped them
         while self.urltovisit:
+            while self.pause:
+                sleep(0)
+
             self.currentURL = self.urltovisit.pop()
 
             allow = self.robot.is_allowed("*",self.currentURL)
-            if not allow: continue
+            if not allow: 
+                print("can't crawl")
+                continue
             if self.currentURL in self.visitedURL: continue
 
             startTimer = timeit.default_timer() # timer
@@ -240,4 +252,5 @@ class spider:
 
             stopTimer = timeit.default_timer()
             print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
+            yield self.currentURL
         self.currentDepth = 0

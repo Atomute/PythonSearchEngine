@@ -1,14 +1,61 @@
 import sys
 import sqlite3
-from PyQt5.QtWidgets import QTabWidget,QMainWindow,QMessageBox, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QListWidget,QTabWidget,QMainWindow,QMessageBox, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt, QUrl, QObject, QThread, pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
+from time import sleep
 
 sys.path.insert(1,"./")
 from indexer.index_cleaner import Cleaning
 from spider.spider import spider
-from search.main import searcher
+from runner import Runner
+from indexer.index_inverter import InvertedIndex
+from indexer.index_Country import Getcountry
+from database.DB_sqlite3 import DB
+
+class spiderworker(QThread):
+    finished = pyqtSignal()
+    uporin = pyqtSignal(str)
+    progress = pyqtSignal(str)
+
+    def __init__(self,urls,parent=None):
+        super().__init__(parent)
+        self.urls = urls
+        self.is_pause = False
+        self.is_kill = False
+
+    def run(self):
+        self.spider = spider()
+        self.db = DB("testt.sqlite3")
+        self.spider.db = self.db
+    
+        existURLs = self.db.get_column("websites","URL")
+
+        for url in self.urls.split(","):
+            while self.is_pause:
+                sleep(1)
+
+            if self.is_kill:
+                break
+
+            if url in existURLs: 
+                self.uporin.emit("Update")
+                self.spider.updateone(url)
+                self.progress.emit(url)
+            else:
+                self.uporin.emit("insert")
+                for cururl in self.spider.run(url,1):
+                    self.progress.emit(cururl)
+
+        self.finished.emit()
+
+    def pause(self):
+        self.spider.pauserun()
+        self.is_pause = True
+
+    def kill(self):
+        self.is_kill = True
 
 class SearchEngine(QMainWindow):
     def __init__(self):
@@ -17,7 +64,8 @@ class SearchEngine(QMainWindow):
         self.conn = sqlite3.connect('testt.sqlite3')
         self.cursor = self.conn.cursor()
         self.spider = spider()
-
+        self.index=InvertedIndex()
+        self.country = Getcountry()
         self.initUI()
 
     def initUI(self):
@@ -80,23 +128,25 @@ class SearchEngine(QMainWindow):
         self.uplinkButton.setFont(QFont('Arial', 14))
         self.uplinkButton.clicked.connect(self.uploadlink)
 
+        # Delete button
+        # self.deleteButton = QPushButton('Submit', self.uplinkTab)
+        # self.uplinkButton.setFont(QFont('Arial', 14))
+        # self.uplinkButton.clicked.connect(self.uploadlink)
+        
+        # List widget
+        self.urlList = QListWidget(self.uplinkTab)
+        
+        self.pausebtn = QPushButton('pause', self.uplinkTab)
+        self.pausebtn.setFont(QFont('Arial', 14))
+        self.pausebtn.clicked.connect(self.pause_update)
+
         # Add widgets to a grid layout
         grid = QGridLayout(self.uplinkTab)
         grid.addWidget(self.uplinkLabel, 0, 0)
         grid.addWidget(self.uplinkBox, 0, 1)
         grid.addWidget(self.uplinkButton, 0, 2)
-
-    def uploadlink(self):
-        urls = self.uplinkBox.text()
-        for url in urls.split(","):
-            if url in self.cursor.execute("SELECT URL FROM websites"): 
-                self.spider.updateone(url)
-            else:
-                self.spider.run(url)
-
-    def domainScore(self,websites):
-        # {website:domain score count}
-        count = self.cursor.execute("SELECT count FROM domain WHERE domainName IN ({})".format(",".join(self.spider.extractDomain(website) for website in websites)))
+        grid.addWidget(self.urlList, 1, 0, 1, 3)
+        grid.addWidget(self.pausebtn,4,0)
 
     def search(self):
         sentence = self.searchBox.text()
@@ -120,7 +170,7 @@ class SearchEngine(QMainWindow):
             websites.append((title, url, frequency_sum))
         self.updateResultTable(websites)
 
-    def updateResultTable(self, websites):
+    def updateResultTable(self,websites):
         self.resultTable.setRowCount(len(websites))
         for i, website in enumerate(websites):
             title = website[0]
@@ -161,8 +211,31 @@ class SearchEngine(QMainWindow):
         # Close the database connection
         conn.close()
         return content
+# -------------------------------------------------------------------------------------------------------------------
+    def uploadlink(self):
+        urls = self.uplinkBox.text()
+        self.worker = spiderworker(urls)
 
-        
+        self.worker.progress.connect(self.reportProgress)
+        self.worker.uporin.connect(self.uporintype)
+        self.worker.finished.connect(self.thread_finish)
+
+        self.worker.start()
+
+    def uporintype(self,uporin):
+        self.urlList.addItem(uporin)
+
+    def reportProgress(self,result):
+        # QMessageBox.information(self,"Result",result)
+        self.urlList.addItem(result)
+
+    def thread_finish(self):
+        self.urlList.addItem("Done")
+
+    def pause_update(self):
+        self.urlList.addItem('Pasue.....')
+        self.worker.pause()
+
 class WebsiteDetailsWindow(QtWidgets.QWidget):
     def __init__(self, title, url, content):
         super().__init__()
