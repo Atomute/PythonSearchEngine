@@ -17,7 +17,7 @@ from database.DB_sqlite3 import *
 
 class spider:
     def __init__(self):
-        self.pause = False
+        self.is_pause = False
 
         self.root = ""
         self.urltovisit = []
@@ -59,6 +59,7 @@ class spider:
     def get_links(self,html):
         # find links in each webpages and add to urltovisit list
         self.currentDepth -= 1
+        print(self.currentDepth)
 
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
@@ -154,7 +155,7 @@ class spider:
         if url in self.db.get_column("websites","URL"):
             self.removeone(url)
             
-        self.run(url,1)
+        self.run(url,0)
         self.push_exlinkDomain()
         self.domain_counter()
 
@@ -168,6 +169,7 @@ class spider:
         self.push_exlinkDomain()
 
     def onelink(self,url):
+        if not url.startswith("http"): return
         self.currentURL = url
         html = requests.get(url).text
         content = self.get_contents(html)
@@ -182,6 +184,10 @@ class spider:
     
     def removeone(self,url):
         websiteID = self.db.get_ID("websites","URL",url)
+        if websiteID == None:
+            print("This URL not in database yet")
+            return None
+        
         self.db.dump_record("websites","websiteID",websiteID)
 
         domain = self.extractDomain(url)
@@ -192,7 +198,11 @@ class spider:
                 self.db.dump_record("domain","domainID",domainID)
             else: 
                 self.push_domain(domain,count-1)
+
         self.domain_counter()
+        self.index_counter()
+        self.country_counter()
+
         self.db.commit()
 
     def removeall(self):
@@ -210,12 +220,37 @@ class spider:
                 self.db.dump_record("domain","domainID",domainID)
         self.db.commit()
 
-    def pauserun(self):
-        self.pause = True
+    def index_counter(self):
+        indexes = self.db.get_column("website_inverted_index","index_id")
+        counter = dict(Counter(indexes))
+        oriIndex = self.db.get_column("keyword","index_id")
+
+        for IndexID in oriIndex:
+            if IndexID not in counter:
+                self.db.dump_record("keyword","index_id",IndexID)
+        self.db.commit()
+
+    def country_counter(self):
+        countries = self.db.get_column("Website_country","wc_id")
+        counter = dict(Counter(countries))
+        oriCountry = self.db.get_column("Country","country_id")
+
+        for CountryID in oriCountry:
+            if CountryID not in counter:
+                self.db.dump_record("Country","country_id",CountryID)
+        self.db.commit()
+
+# UI related function --------------------------------------------------------------------------------------------------------------------------------------------
+    def start_stop(self):
+        self.is_pause = not self.is_pause
+
+    def kill(self):
+        self.is_kill = True
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def run(self,root,*depth):
         # scrape one root at choosen depth
-
+        self.is_kill = False
         # initial setup
         self.depth = depth
         if not depth: self.depth=None
@@ -232,9 +267,6 @@ class spider:
         
         # loop to visit the choosen link and scraped them
         while self.urltovisit:
-            while self.pause:
-                sleep(0)
-
             self.currentURL = self.urltovisit.pop()
 
             allow = self.robot.is_allowed("*",self.currentURL)
@@ -252,5 +284,13 @@ class spider:
 
             stopTimer = timeit.default_timer()
             print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
+
+            if self.is_kill:
+                self.urltovisit = []
+                break
+
+            while self.is_pause:
+                sleep(0)
+
             yield self.currentURL
-        self.currentDepth = 0
+
