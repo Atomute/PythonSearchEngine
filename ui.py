@@ -47,8 +47,6 @@ class spiderworker(QThread):
                 # this will update that link
                 self.uporin.emit("Update")
                 self.spider.updateone(url)
-                self.indexer.indexOneWebsite(url)
-                self.get_country.find_c_websites()
                 self.progress.emit(url)
             else:
                 # this will insert that link
@@ -57,10 +55,9 @@ class spiderworker(QThread):
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites()
+
                     self.spider.push_exlinkDomain()
-                    self.spider.domain_counter()
-                    self.spider.index_counter()
-                    self.spider.country_counter()
+                    self.spider.counter()
                     self.progress.emit("Indexed "+cururl)
                 
         self.finished.emit()
@@ -84,7 +81,6 @@ class SearchEngine(QMainWindow):
         # Connect to database
         self.conn = sqlite3.connect('testt.sqlite3')
         self.cursor = self.conn.cursor()
-        self.spider = spider()
         self.index=InvertedIndex()
         self.country = Getcountry()
         self.initUI()
@@ -178,7 +174,7 @@ class SearchEngine(QMainWindow):
         #Update_all button 
         self.Update_all = QPushButton('Update all website',self.uplinkTab)
         self.Update_all.setFont(QFont('Arial', 14))
-        #self.Update_all.clicked.connect(self.pause_update)
+        self.Update_all.clicked.connect(self.updateAll_btn)
 
         # Add widgets to a grid layout
         grid = QGridLayout(self.uplinkTab)
@@ -190,7 +186,6 @@ class SearchEngine(QMainWindow):
         grid.addWidget(self.Update_all,6,3)
         grid.addWidget(self.urlList, 2, 0, 8, 3)
         grid.addWidget(self.killbtn, 4, 3)
-
 
 #---------------------------------  
 #Function in btn
@@ -238,7 +233,6 @@ class SearchEngine(QMainWindow):
         count = len(websites)
         self.resultCountLabel.setText(f'Result found: {count}')
 
-
     def openUrl(self, row, column):
         if column == 1:
             url = self.resultTable.item(row, column).text()
@@ -278,6 +272,17 @@ class SearchEngine(QMainWindow):
         for url in urls.split(","):
             sp.removeone(url)
             self.urlList.addItem("Removed "+url)
+        sp.db.close_conn()
+
+    def updateAll_btn(self):
+        spiderman = spider()
+
+        spiderman.updateall()
+        spiderman.counter()
+        
+        spiderman.db.close_conn()
+
+        self.urlList.addItem("Done")
 
     def kill_btn(self):
         self.worker.kill()

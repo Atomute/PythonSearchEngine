@@ -77,7 +77,10 @@ class InvertedIndex:
         return index_ids
 
     def add_website_index_relation(self, website_id, index_ids, word_freq):
+        self.cursor.execute("SELECT index_id FROM website_inverted_index")
+        indexes = self.cursor.fetchall()
         for index_id in index_ids:
+            if (index_id,) in indexes: continue
             frequency = word_freq[self.get_word_from_index_id(index_id, self.cursor)]
             self.cursor.execute("INSERT INTO website_inverted_index (websiteID, index_id, frequency) VALUES (?, ?, ?)", (website_id, index_id, frequency))
         self.conn.commit()

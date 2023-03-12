@@ -1,12 +1,13 @@
-from geopy.geocoders import Nominatim
+import plotly.express as px
 
-# Create a geocoder object
-geolocator = Nominatim(user_agent="my_app")
+# Load data
+df = px.data.gapminder()
 
-# Get the latitude and longitude of a location
-location = geolocator.geocode("america")
-latitude = location.latitude
-longitude = location.longitude
+# Create the plot
+fig = px.scatter_geo(df, locations="iso_alpha", color="continent",
+                     hover_name="country", size="pop",
+                     animation_frame="year",
+                     projection="natural earth")
 
-print("Latitude:", latitude)
-print("Longitude:", longitude)
+# Show the plot
+fig.show()

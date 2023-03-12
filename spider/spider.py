@@ -14,6 +14,8 @@ from collections import Counter
 from time import sleep
 
 from database.DB_sqlite3 import *
+from indexer.index_inverter import InvertedIndex
+from indexer.index_Country import Getcountry
 
 class spider:
     def __init__(self):
@@ -25,6 +27,8 @@ class spider:
         self.exlinks = []
         self.currentDepth = 0
 
+        self.indexer = InvertedIndex()
+        self.country = Getcountry()
         self.db = DB("testt.sqlite3")
         self.robot = RobotExclusionRulesParser()
 
@@ -67,6 +71,7 @@ class spider:
         for link in links:
             path = link.get('href')
             fullpath = urljoin(self.currentURL,path)
+            
 
             if not fullpath.startswith("https") or not fullpath.startswith("http"):
                 continue
@@ -158,9 +163,12 @@ class spider:
         if url in self.db.get_column("websites","URL"):
             self.removeone(url)
             
-        self.run(url,0)
+        for url in self.run(url,0):
+            pass
+        self.indexer.indexOneWebsite(url)
+        self.country.find_c_websites()
         self.push_exlinkDomain()
-        self.domain_counter()
+        self.counter()
 
     def updateall(self):
         # simply delete all entry and scrape it all again
@@ -243,6 +251,11 @@ class spider:
                 self.db.dump_record("Country","country_id",CountryID)
         self.db.commit()
 
+    def counter(self):
+        self.domain_counter()
+        self.index_counter()
+        self.country_counter()
+
 # UI related function --------------------------------------------------------------------------------------------------------------------------------------------
     def start_stop(self):
         self.is_pause = not self.is_pause
@@ -252,9 +265,12 @@ class spider:
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def run(self,root,*depth):
-        self.root = root
+        parsed_uri = urlparse(root)
+        self.root = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+
         # scrape one root at choosen depth
         self.is_kill = False
+        self.is_pause = False
         # initial setup
         self.depth = depth
         if not depth: self.depth=None
