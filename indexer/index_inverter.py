@@ -11,7 +11,6 @@ class InvertedIndex:
         self.cursor = self.conn.cursor()
 
     def indexOneWebsite(self,url):
-        print("here")
         self.cursor.execute("SELECT websiteID, title, content FROM websites WHERE URL='{}'".format(url))
         websites = self.cursor.fetchall()
         try:
