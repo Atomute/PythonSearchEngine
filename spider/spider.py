@@ -71,12 +71,11 @@ class spider:
         for link in links:
             path = link.get('href')
             fullpath = urljoin(self.currentURL,path)
-            
 
             if not fullpath.startswith("https") or not fullpath.startswith("http"):
                 continue
 
-            if not fullpath.startswith(self.root):
+            if self.extractDomain(fullpath) != self.rootDomain:
                 # external link in this page
                 self.exlinks.append(fullpath)
                 continue
@@ -173,11 +172,9 @@ class spider:
     def updateall(self):
         # simply delete all entry and scrape it all again
         urls = self.db.get_column("websites","URL")
-        self.db.dump_table()
-        for url in urls:
-            self.run(url,0)
 
-        self.push_exlinkDomain()
+        for url in urls:
+            self.updateone(url)
 
     def onelink(self,url):
         if not url.startswith("http"): return
@@ -273,7 +270,8 @@ class spider:
         self.is_pause = False
         # initial setup
         self.depth = depth
-        if not depth: self.depth=None
+        print(depth)
+        if not depth or depth == (None,): self.depth=None
         else: self.currentDepth = self.depth[0]
 
         self.urltovisit.append(root)
@@ -282,8 +280,9 @@ class spider:
         self.rootDomain = self.extractDomain(root)
         if not self.rootDomain in self.db.get_column("domain","domainName"): 
             self.push_domain(self.rootDomain)
-        
-        self.robot.fetch(root+"robots.txt")
+
+        print(root)
+        self.robot.fetch(self.root+"robots.txt")
         
         # loop to visit the choosen link and scraped them
         while self.urltovisit:

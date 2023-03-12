@@ -21,11 +21,13 @@ class spiderworker(QThread):
     progress = pyqtSignal(str)
     Upload_status = pyqtSignal(str)
 
-    def __init__(self,urls,parent=None):
+    def __init__(self,urls,*depth,parent=None):
         super().__init__(parent)
         self.urls = urls
         self.is_pause = False
         self.is_kill = False
+        if not depth: depth = [None]
+        self.depth = depth[0]
 
     def run(self):
         self.spider = spider()
@@ -50,8 +52,9 @@ class spiderworker(QThread):
                 self.progress.emit(url)
             else:
                 # this will insert that link
+                # print(url)
                 self.uporin.emit("insert")
-                for cururl in self.spider.run(url,1):
+                for cururl in self.spider.run(url,self.depth):
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites()
@@ -275,14 +278,21 @@ class SearchEngine(QMainWindow):
         sp.db.close_conn()
 
     def updateAll_btn(self):
-        spiderman = spider()
+        db = DB("testt.sqlite3")
+        urls = db.get_column("websites","URL")
+        urls = str(urls).replace("[","").replace("]","").replace("'","").replace(" ","")
+        print(urls)
+        db.dump_table()
+        db.close_conn()
 
-        spiderman.updateall()
-        spiderman.counter()
-        
-        spiderman.db.close_conn()
+        self.worker = spiderworker(urls,0)
 
-        self.urlList.addItem("Done")
+        self.worker.progress.connect(self.reportProgress)
+        self.worker.uporin.connect(self.uporintype)
+        self.worker.Upload_status.connect(self.pauseORcontinue)
+        self.worker.finished.connect(self.thread_finish)
+
+        self.worker.start()
 
     def kill_btn(self):
         self.worker.kill()
