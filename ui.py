@@ -44,17 +44,23 @@ class spiderworker(QThread):
                 break
 
             if url in existURLs: 
+                # this will update that link
                 self.uporin.emit("Update")
                 self.spider.updateone(url)
                 self.indexer.indexOneWebsite(url)
                 self.get_country.find_c_websites()
                 self.progress.emit(url)
             else:
+                # this will insert that link
                 self.uporin.emit("insert")
                 for cururl in self.spider.run(url,1):
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites()
+                    self.spider.push_exlinkDomain()
+                    self.spider.domain_counter()
+                    self.spider.index_counter()
+                    self.spider.country_counter()
                     self.progress.emit("Indexed "+cururl)
                 
         self.finished.emit()

@@ -34,7 +34,9 @@ def create_database(dbName):
 
     createCountry = """CREATE TABLE IF NOT EXISTS Country (
                     country_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    country TEXT UNIQUE NOT NULL)"""
+                    country TEXT UNIQUE NOT NULL,
+                    latitude REAL,
+                    longtitude REAL )"""
     cursor.execute(createCountry)
 
     createWebsite_country = """CREATE TABLE IF NOT EXISTS Website_country (

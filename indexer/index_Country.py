@@ -1,6 +1,7 @@
 import pycountry
 import time
 import sqlite3
+from geopy.geocoders import Nominatim
 
 class Getcountry:
     def __init__(self):
@@ -19,7 +20,13 @@ class Getcountry:
                 website_id = website[1]
                 word = website[2].lower()
                 if word in country_list:
-                    self.cursor.execute("INSERT OR IGNORE INTO Country (country) VALUES (?)", (word,))
+                    geolocator = Nominatim(user_agent="my_app")
+
+                    location = geolocator.geocode(word)
+                    latitude = location.latitude
+                    longitude = location.longitude
+
+                    self.cursor.execute("INSERT OR IGNORE INTO Country (country,latitude,longtitude) VALUES (?,?,?)", (word,latitude,longitude,))
                     self.cursor.execute("SELECT country_id FROM Country WHERE country=?", (word,))
                     country_id = self.cursor.fetchone()[0]
                     self.cursor.execute("INSERT INTO Website_country (website_id, wc_id) VALUES (?, ?)", (website_id, country_id))

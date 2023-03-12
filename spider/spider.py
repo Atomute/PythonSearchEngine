@@ -68,7 +68,10 @@ class spider:
             path = link.get('href')
             fullpath = urljoin(self.currentURL,path)
 
-            if not self.rootDomain in fullpath:
+            if not fullpath.startswith("https") or not fullpath.startswith("http"):
+                continue
+
+            if not fullpath.startswith(self.root):
                 # external link in this page
                 self.exlinks.append(fullpath)
                 continue
@@ -249,6 +252,7 @@ class spider:
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def run(self,root,*depth):
+        self.root = root
         # scrape one root at choosen depth
         self.is_kill = False
         # initial setup

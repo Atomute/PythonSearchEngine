@@ -70,6 +70,7 @@ class test_get_links(unittest.TestCase):
     def setUp(self):
         self.spider = spider()
         self.spider.rootDomain = "root.com"
+        self.spider.root = "https://www.root.com/"
         self.spider.currentURL = "https://www.root.com/"
 
     def test_normal(self):
