@@ -79,7 +79,7 @@ class spider:
                 # external link in this page
                 self.exlinks.append(fullpath)
                 continue
-            if  path == None or "#" in path:
+            if  path == None or "#" in path or "?" in path:
                 continue
             
             self.urltovisit.append(fullpath)

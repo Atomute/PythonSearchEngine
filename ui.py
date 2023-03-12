@@ -5,7 +5,7 @@ from PyQt5.QtGui import QFont, QIcon, QDesktopServices
 from PyQt5.QtCore import Qt, QUrl, QObject, QThread, pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
 from time import sleep
-
+from urllib.parse import urlparse
 sys.path.insert(1,"./")
 from indexer.index_cleaner import Cleaning
 from indexer.index_Country import Getcountry
@@ -40,7 +40,7 @@ class spiderworker(QThread):
 
         for url in self.urls.split(","):
             while self.is_pause:
-                sleep(1)
+                sleep(0)
 
             if self.is_kill:
                 break
@@ -52,7 +52,6 @@ class spiderworker(QThread):
                 self.progress.emit(url)
             else:
                 # this will insert that link
-                # print(url)
                 self.uporin.emit("insert")
                 for cururl in self.spider.run(url,self.depth):
                     self.progress.emit("Crawled "+cururl)
@@ -67,12 +66,11 @@ class spiderworker(QThread):
 
     def start_stop(self):
         self.spider.start_stop()
-        match self.spider.is_pause:
-            case True:
-                self.Upload_status.emit("Pause")
-            case False:
-                self.Upload_status.emit("Continue")
-        self.is_pause = True
+        self.is_pause = not self.is_pause
+        if self.spider.is_pause:
+            self.Upload_status.emit("Pause")
+        else:
+            self.Upload_status.emit("Continue")
 
     def kill(self):
         self.spider.kill()
@@ -84,6 +82,7 @@ class SearchEngine(QMainWindow):
         # Connect to database
         self.conn = sqlite3.connect('testt.sqlite3')
         self.cursor = self.conn.cursor()
+        self.spider = spider()
         self.index=InvertedIndex()
         self.country = Getcountry()
         self.initUI()
@@ -166,11 +165,13 @@ class SearchEngine(QMainWindow):
         
         #kill button
         self.killbtn = QPushButton('Kill', self.uplinkTab)
+        self.killbtn.setEnabled(False)
         self.killbtn.setFont(QFont('Arial', 14))
         self.killbtn.clicked.connect(self.kill_btn)
 
         #Pause button 
         self.pausebtn = QPushButton('Start/Stop', self.uplinkTab)
+        self.pausebtn.setEnabled(False)
         self.pausebtn.setFont(QFont('Arial', 14))
         self.pausebtn.clicked.connect(self.start_stop_btn)
 
@@ -178,6 +179,11 @@ class SearchEngine(QMainWindow):
         self.Update_all = QPushButton('Update all website',self.uplinkTab)
         self.Update_all.setFont(QFont('Arial', 14))
         self.Update_all.clicked.connect(self.updateAll_btn)
+
+        #Update_all button 
+        self.caltfidf = QPushButton('Calculate TFIDF',self.uplinkTab)
+        self.caltfidf.setFont(QFont('Arial', 14))
+        self.caltfidf.clicked.connect(self.TFIDF)
 
         # Add widgets to a grid layout
         grid = QGridLayout(self.uplinkTab)
@@ -189,6 +195,7 @@ class SearchEngine(QMainWindow):
         grid.addWidget(self.Update_all,6,3)
         grid.addWidget(self.urlList, 2, 0, 8, 3)
         grid.addWidget(self.killbtn, 4, 3)
+        grid.addWidget(self.caltfidf, 7, 3)
 
 #---------------------------------  
 #Function in btn
@@ -205,19 +212,21 @@ class SearchEngine(QMainWindow):
         if len(index_ids) == 0:
             self.updateResultTable([])
         else:
-            self.cursor.execute("SELECT websiteID, SUM(frequency) FROM website_inverted_index WHERE index_id IN ({}) GROUP BY websiteID ORDER BY SUM(frequency) DESC".format(",".join(str(i) for i in index_ids)))
+            # Updated query to use the tfidf column instead of the frequency column
+            self.cursor.execute("SELECT websiteID, SUM(tfidf) FROM website_inverted_index WHERE index_id IN ({}) GROUP BY websiteID ORDER BY SUM(tfidf) DESC".format(",".join(str(i) for i in index_ids)))
             results = self.cursor.fetchall()
             websites = []
             for result in results:
                 website_id = result[0]
-                frequency_sum = result[1]
+                tfidf_sum = result[1]
                 self.cursor.execute("SELECT title, URL FROM websites WHERE websiteID=?", (website_id,))
                 title, url = self.cursor.fetchone()
-                websites.append((title, url, frequency_sum))
+                websites.append((title, url, tfidf_sum))
             self.updateResultTable(websites)
 
     def updateResultTable(self,websites):
         self.resultTable.setRowCount(len(websites))
+
         for i, website in enumerate(websites):
             title = website[0]
             url = website[1]
@@ -235,6 +244,7 @@ class SearchEngine(QMainWindow):
         # Update search result count label
         count = len(websites)
         self.resultCountLabel.setText(f'Result found: {count}')
+
 
     def openUrl(self, row, column):
         if column == 1:
@@ -259,15 +269,48 @@ class SearchEngine(QMainWindow):
         return content
 
     def uploadlink(self):
-        urls = self.uplinkBox.text()
-        self.worker = spiderworker(urls)
+        url = self.uplinkBox.text()
+        if urlparse(url).scheme and urlparse(url).netloc:
+            # The input is a valid URL
+            self.worker = spiderworker(url)
+            self.worker.progress.connect(self.reportProgress)
+            self.worker.uporin.connect(self.uporintype)
+            self.worker.Upload_status.connect(self.pauseORcontinue)
+            self.worker.finished.connect(self.thread_finish)
+
+            self.worker.start()
+            self.killbtn.setEnabled(True)  # enable the kill button
+            self.pausebtn.setEnabled(True)  # enable the pause button
+        else:
+            # The input is not a valid URL
+            self.urlList.addItem("Invalid URL")
+            
+    def TFIDF(self):
+        indexer=InvertedIndex()
+        indexer.calculate_tfidf()
+        self.urlList.addItem("Done Calculating!")
+
+    def updateAll_btn(self):
+        db = DB("testt.sqlite3")
+        urls = db.get_column("websites","URL")
+        urls = str(urls).replace("[","").replace("]","").replace("'","").replace(" ","")
+        if urls == "":
+            self.urlList.addItem("No websites In this database yet")
+            return
+        self.urlList.addItem("Updating all the link")
+        
+        db.dump_table()
+        db.close_conn()
+
+        self.worker = spiderworker(urls,0)
 
         self.worker.progress.connect(self.reportProgress)
-        self.worker.uporin.connect(self.uporintype)
         self.worker.Upload_status.connect(self.pauseORcontinue)
         self.worker.finished.connect(self.thread_finish)
-
         self.worker.start()
+
+        self.killbtn.setEnabled(True)  # enable the kill button
+        self.pausebtn.setEnabled(True)  # enable the pause button
 
     def delete_btn(self):
         urls = self.uplinkBox.text()
@@ -276,23 +319,6 @@ class SearchEngine(QMainWindow):
             sp.removeone(url)
             self.urlList.addItem("Removed "+url)
         sp.db.close_conn()
-
-    def updateAll_btn(self):
-        db = DB("testt.sqlite3")
-        urls = db.get_column("websites","URL")
-        urls = str(urls).replace("[","").replace("]","").replace("'","").replace(" ","")
-        print(urls)
-        db.dump_table()
-        db.close_conn()
-
-        self.worker = spiderworker(urls,0)
-
-        self.worker.progress.connect(self.reportProgress)
-        self.worker.uporin.connect(self.uporintype)
-        self.worker.Upload_status.connect(self.pauseORcontinue)
-        self.worker.finished.connect(self.thread_finish)
-
-        self.worker.start()
 
     def kill_btn(self):
         self.worker.kill()
@@ -359,7 +385,7 @@ class WebsiteDetailsWindow(QtWidgets.QWidget):
         #spatial 
         self.spatialLabel = QtWidgets.QLabel(self.spatial_tab)
         self.spatialLabel.setObjectName("spatialLabel")
-        self.spatialLabel.setText("Fucking plot spatial here asshole !.")
+        self.spatialLabel.setText("plot spatial here !.")
         self.spatial_tab_layout.addWidget(self.spatialLabel)
 
         # Set the layout for the main widget
@@ -371,8 +397,6 @@ class WebsiteDetailsWindow(QtWidgets.QWidget):
         Form.setWindowTitle(_translate("Form", self.title))
         self.pushButton.setText(_translate("Form", "Close"))
     
-
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     searchEngine = SearchEngine()
