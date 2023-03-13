@@ -3,6 +3,7 @@ import sys
 sys.path.insert(1,"./")
 from indexer.index_cleaner import Cleaning
 import time
+import math
 
 class InvertedIndex:
     def __init__(self):
@@ -76,10 +77,7 @@ class InvertedIndex:
         return index_ids
 
     def add_website_index_relation(self, website_id, index_ids, word_freq):
-        self.cursor.execute("SELECT index_id FROM website_inverted_index")
-        indexes = self.cursor.fetchall()
         for index_id in index_ids:
-            if (index_id,) in indexes: continue
             frequency = word_freq[self.get_word_from_index_id(index_id, self.cursor)]
             self.cursor.execute("INSERT INTO website_inverted_index (websiteID, index_id, frequency) VALUES (?, ?, ?)", (website_id, index_id, frequency))
         self.conn.commit()
@@ -87,3 +85,29 @@ class InvertedIndex:
     def get_word_from_index_id(self, index_id, cursor):
         cursor.execute("SELECT word FROM keyword WHERE index_id=?", (index_id,))
         return cursor.fetchone()[0]
+
+    def calculate_tfidf(self):
+        # Get the total number of documents
+        self.cursor.execute("SELECT COUNT(DISTINCT websiteID) FROM website_inverted_index")
+        total_docs = self.cursor.fetchone()[0]
+        
+        # Loop through each word in the inverted index
+        self.cursor.execute("SELECT index_id FROM keyword")
+        index_ids = [row[0] for row in self.cursor.fetchall()]
+        for index_id in index_ids:
+            # Get the documents that contain the word
+            self.cursor.execute("SELECT websiteID, frequency FROM website_inverted_index WHERE index_id=?", (index_id,))
+            rows = self.cursor.fetchall()
+            
+            # Calculate the IDF score for the word
+            num_docs_with_word = len(rows)
+            idf = math.log(total_docs / num_docs_with_word)
+            
+            # Update the TF-IDF score for each document that contains the word
+            for row in rows:
+                website_id = row[0]
+                tf = row[1]
+                tfidf = tf * idf
+                self.cursor.execute("UPDATE website_inverted_index SET tfidf=? WHERE websiteID=? AND index_id=?", (tfidf, website_id, index_id))
+        
+        self.conn.commit()
