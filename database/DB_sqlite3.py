@@ -63,12 +63,22 @@ class DB():
         self.cursor.execute("SELECT {}.{} FROM {} ORDER BY {}".format(table,column,table,column))
         rows = self.cursor.fetchall()
         ans = [row[0] for row in rows]
+        if ans == [""]:
+            return []
 
         return ans
     
     def get_column_specific(self,table,column,value,*sec_column):
         if not sec_column: sec_column = [column]
         self.cursor.execute("SELECT {}.{} FROM {} WHERE {}='{}'".format(table,column,table,sec_column[0],value))
+        rows = self.cursor.fetchall()
+        ans = [row[0] for row in rows]
+
+        return ans
+    
+    def get_visited_url(self,table,column,value,*sec_column):
+        if not sec_column: sec_column = [column]
+        self.cursor.execute("SELECT {}.{} FROM {} WHERE {} LIKE '{}%'".format(table,column,table,sec_column[0],value))
         rows = self.cursor.fetchall()
         ans = [row[0] for row in rows]
 

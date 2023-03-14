@@ -35,8 +35,8 @@ def create_database(dbName):
     createCountry = """CREATE TABLE IF NOT EXISTS Country (
                     country_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     country TEXT UNIQUE NOT NULL,
-                    latitude REAL,
-                    longtitude REAL )"""
+                    countryISO TEXT
+                      )"""
     cursor.execute(createCountry)
 
     createWebsite_country = """CREATE TABLE IF NOT EXISTS Website_country (
@@ -58,6 +58,12 @@ def create_database(dbName):
                     index_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     word TEXT UNIQUE NOT NULL)"""
     cursor.execute(createKeyword)
+
+    createLog = """CREATE TABLE IF NOT EXISTS log (
+                    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    root TEXT,
+                    remaining TEXT)"""
+    cursor.execute(createLog)
 
     conn.commit()
     conn.close()
