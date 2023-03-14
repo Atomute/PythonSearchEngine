@@ -81,6 +81,7 @@ class spiderworker(QThread):
             self.Upload_status.emit("Continue")
 
     def kill(self):
+
         self.spider.kill()
         self.is_kill = True
 
@@ -153,7 +154,7 @@ class SearchEngine(QMainWindow):
         self.uplinkLabel.setFont(QFont('Arial', 14))
         self.uplinkBox = QLineEdit(self.uplinkTab)
         self.uplinkBox.setFont(QFont('Arial', 14))
-
+        self.uplinkBox.returnPressed.connect(self.uploadlink)
         # submit button
         self.uplinkButton = QPushButton('Submit', self.uplinkTab)
         self.uplinkButton.setFont(QFont('Arial', 14))
@@ -452,3 +453,4 @@ if __name__ == '__main__':
     searchEngine = SearchEngine()
     searchEngine.show()
     sys.exit(app.exec_())
+

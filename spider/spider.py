@@ -75,7 +75,7 @@ class spider:
 
             if not fullpath.startswith("https") or not fullpath.startswith("http"):
                 continue
-            
+
             if fullpath in self.visitedurl or fullpath in self.urltovisit:
                 continue
 
@@ -338,3 +338,4 @@ class spider:
                 sleep(0)
 
             yield self.currentURL,self.urltovisit
+
