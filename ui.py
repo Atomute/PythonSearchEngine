@@ -1,5 +1,6 @@
 import sys
 import sqlite3
+import timeit
 from PyQt5.QtWidgets import QListWidget,QTabWidget,QMainWindow,QMessageBox, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices
 from PyQt5.QtCore import Qt, QUrl, QObject, QThread, pyqtSignal
@@ -14,13 +15,25 @@ from runner import Runner
 from indexer.index_inverter import InvertedIndex
 from indexer.index_Country import Getcountry
 from database.DB_sqlite3 import DB
+from search.searcher import searcher
 
-class loggingWorker(QThread):
+class tfidfWorker(QThread):
     finished = pyqtSignal()
     progress = pyqtSignal(str)
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def run(self):
+        print("TFIDF Thread Working")
+        self.is_pause = False
+        self.indexer=InvertedIndex()
+        for progression in self.indexer.calculate_tfidf():
+            while self.is_pause:
+                sleep(0)
+            self.progress.emit(progression)
+
+        self.finished.emit()
+
+    def start_stop(self):
+        self.is_pause = not self.is_pause
 
 class spiderworker(QThread):
     finished = pyqtSignal()
@@ -61,7 +74,8 @@ class spiderworker(QThread):
                 # this will insert that link
                 self.uporin.emit("insert")
                 for cururl,urltovisit in self.spider.run(url,self.depth):
-                    self.spider.push_log(urltovisit)
+                    if urltovisit != []:
+                        self.spider.push_log(urltovisit)
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites_one(cururl)
@@ -98,7 +112,7 @@ class SearchEngine(QMainWindow):
         self.setWindowTitle('Search Engine')
         self.setGeometry(100,100,1000,700)
 #---------------------------------
-# Create a QTabWidget 
+# Create a Country tab
 
         self.tabWidget = QTabWidget(self)
         self.setCentralWidget(self.tabWidget)
@@ -224,29 +238,53 @@ class SearchEngine(QMainWindow):
 
 #---------------------------------  
 #Function in btn
+    # def search(self):
+    #     sentence = self.searchBox.text()
+    #     words = Cleaning().process_text(sentence)
+    #     index_ids = []
+    #     for word in words:
+    #         self.db.cursor.execute("SELECT index_id FROM keyword WHERE word=?", (word,))
+    #         result = self.db.cursor.fetchone()
+    #         if result is not None:
+    #             index_ids.append(result[0])
+    #     if len(index_ids) == 0:
+    #         self.updateResultTable([])
+    #     else:
+    #         # Updated query to use the tfidf column instead of the frequency column
+    #         self.db.cursor.execute("""SELECT websiteID, SUM(tfidf), COUNT(websiteID)
+    #                                  FROM website_inverted_index 
+    #                                  WHERE index_id IN ({}) 
+    #                                  GROUP BY websiteID 
+    #                                  ORDER BY SUM(tfidf) DESC""".format(",".join(str(i) for i in index_ids)))
+    #         results = self.db.cursor.fetchall()
+    #         websites = []
+    #         for result in results:
+    #             website_id = result[0]
+    #             tfidf_sum = result[1]
+    #             score = tfidf_sum*result[2]
+    #             self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID=?", (website_id,))
+    #             title, url = self.db.cursor.fetchone()
+    #             websites.append((title, url, score))
+    #         self.updateResultTable(websites)
+
     def search(self):
-        sentence = self.searchBox.text()
-        words = Cleaning().process_text(sentence)
-        index_ids = []
-        for word in words:
-            self.db.cursor.execute("SELECT index_id FROM keyword WHERE word=?", (word,))
-            result = self.db.cursor.fetchone()
-            if result is not None:
-                index_ids.append(result[0])
-        if len(index_ids) == 0:
-            self.updateResultTable([])
-        else:
-            # Updated query to use the tfidf column instead of the frequency column
-            self.db.cursor.execute("SELECT websiteID, SUM(tfidf) FROM website_inverted_index WHERE index_id IN ({}) GROUP BY websiteID ORDER BY SUM(tfidf) DESC".format(",".join(str(i) for i in index_ids)))
-            results = self.db.cursor.fetchall()
-            websites = []
-            for result in results:
-                website_id = result[0]
-                tfidf_sum = result[1]
-                self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID=?", (website_id,))
-                title, url = self.db.cursor.fetchone()
-                websites.append((title, url, tfidf_sum))
-            self.updateResultTable(websites)
+        start = timeit.default_timer()
+        searchTable = []
+        query = self.searchBox.text()
+        self.Mysearcher = searcher()
+        results = self.Mysearcher.search(query)
+    
+        for result in results:
+            webID = result[0]
+            score = result[1]
+            self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID={}".format(webID))
+            title, url = self.db.cursor.fetchone()
+            searchTable.append((title,url,score))
+
+        stop = timeit.default_timer()
+        print(stop-start)
+
+        self.updateResultTable(searchTable)
 
     def updateResultTable(self,websites):
         self.resultTable.setRowCount(len(websites))
@@ -293,7 +331,7 @@ class SearchEngine(QMainWindow):
         return content
 
     def logging(self,url):
-        self.urlList.addItem(url.text())
+        self.urlList.addItem("Continue scraping "+url.text())
         urls = self.db.get_column_specific("log","remaining",url.text(),"root")
         urls = "".join(urls)
         self.worker = spiderworker(urls)
@@ -329,12 +367,16 @@ class SearchEngine(QMainWindow):
             self.urlList.addItem("Invalid URL")
             
     def TFIDF(self):
-        indexer=InvertedIndex()
-        indexer.calculate_tfidf()
-        self.urlList.addItem("Done Calculating!")
+        self.tfidfworker = tfidfWorker()
+        self.tfidfworker.progress.connect(self.reportProgress)
+        self.tfidfworker.finished.connect(self.thread_finish)
+
+        self.tfidfworker.start()
 
     def updateAll_btn(self):
         db = DB("testt.sqlite3")
+        spiderman = spider()
+        spiderman.db = db
         urls = db.get_column("websites","URL")
         urls = str(urls).replace("[","").replace("]","").replace("'","").replace(" ","")
         if urls == "":
@@ -343,12 +385,12 @@ class SearchEngine(QMainWindow):
         self.urlList.addItem("Updating all the link")
         
         db.dump_table()
+        spiderman.counter()
         db.close_conn()
 
         self.worker = spiderworker(urls,0)
 
-        self.worker.progress.connect(self.reportProgress)
-        self.worker.uporin.connect(self.uporintype)
+        self.worker.progress.connect(self.progressBar)
         self.worker.Upload_status.connect(self.pauseORcontinue)
         self.worker.finished.connect(self.thread_finish)
         self.worker.start()
@@ -371,11 +413,16 @@ class SearchEngine(QMainWindow):
         self.worker.kill()
         self.urlList.clear()
         self.uplinkBox.clear()
+
         self.uplinkButton.setEnabled(True)
         self.deleteButton.setEnabled(True)
 
     def start_stop_btn(self):
         self.worker.start_stop()  
+        self.tfidfworker.start_stop()
+
+    def progressBar(self):
+        pass
 
     def pauseORcontinue(self,status):
         self.urlList.addItem(status)  

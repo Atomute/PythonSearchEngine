@@ -1,3 +1,4 @@
+# Testing All function function in spider that are not database related
 import unittest
 from unittest.mock import MagicMock,patch
 import sys
@@ -72,6 +73,7 @@ class test_get_links(unittest.TestCase):
         self.spider.rootDomain = "root.com"
         self.spider.root = "https://www.root.com/"
         self.spider.currentURL = "https://www.root.com/"
+        self.spider.visitedurl = []
 
     def test_normal(self):
         tester = self.spider.get_links("url")
@@ -107,7 +109,7 @@ class test_get_links(unittest.TestCase):
         self.spider.get_links("<a href='https://www.something.com/'>something</a>")
         tester = self.spider.exlinks
 
-        self.assertEqual(tester,['https://www.something.com/'])
+        self.assertEqual(tester,['https://www.something.com'])
 
 class test_extractDomain(unittest.TestCase):
     def setUp(self) -> None:

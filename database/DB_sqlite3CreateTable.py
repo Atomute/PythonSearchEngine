@@ -50,6 +50,7 @@ def create_database(dbName):
                                     websiteID INTEGER NOT NULL,
                                     index_id INTEGER NOT NULL,
                                     frequency INTEGER NOT NULL,
+                                    tfidf REAL,
                                     FOREIGN KEY(websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
                                     FOREIGN KEY(index_id) REFERENCES keyword(index_id))"""
     cursor.execute(createWebsite_inverted_index)

@@ -5,7 +5,7 @@ from spider.spider import spider
 from database.DB_sqlite3 import DB
 from indexer.index_inverter import InvertedIndex
 from indexer.index_Country import Getcountry
-from search.main import searcher
+from search.searcher import searcher
 
 class Runner:
     def __init__(self):

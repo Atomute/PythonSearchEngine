@@ -89,20 +89,6 @@ class spider:
             self.urltovisit.append(fullpath)
         return self.urltovisit
     
-    def get_location(self,domain):
-        try:
-            ip = socket.gethostbyname(domain)
-            res = DbIpCity.get(ip, api_key="free")
-            return "{}, {}, {}".format(res.city,res.region,res.country)
-        except socket.gaierror:
-            try:
-                domain = "www."+domain
-                ip = socket.gethostbyname(domain)
-                res = DbIpCity.get(ip, api_key="free")
-                return ["{}, {}, {}".format(res.city,res.region,res.country),domain]
-            except socket.gaierror:
-                return "-"
-    
     def push_domain(self,domain,*count):
         if not count: count=[1]
         if "{}".format(domain) in self.db.get_column("domain","domainName"):
@@ -136,7 +122,7 @@ class spider:
 
     def push_exlinkDomain(self):
         # push external link domain to database
-        print("pushing external link to domain table")
+        # print("pushing external link to domain table")
         backlinks = self.db.get_table("backlinks")
         lastWebID = self.db.get_column("Websites_Domain","websiteID")
         if lastWebID == []: lastWebID=[0]
@@ -147,7 +133,7 @@ class spider:
             websiteID = row[0]
             url = row[1]
             progresscounter += 1
-            print(f"{progresscounter}/{len(backlinks)}",end="\r")
+            # print(f"{progresscounter}/{len(backlinks)}",end="\r")
             if websiteID<lastWebID: continue
 
             domain = self.extractDomain(url)
@@ -295,6 +281,8 @@ class spider:
         self.is_kill = False
         self.is_pause = False
 
+        if root.endswith("/"):
+            root = root[:-1]
         self.urltovisit.append(root)
         
         # initial setup
@@ -311,19 +299,18 @@ class spider:
         
         # loop to visit the choosen link and scraped them
         while self.urltovisit:
-            self.visitedurl = self.db.get_visited_url("websites","URL",self.root)
+            startTimer = timeit.default_timer() # timer
+
+            self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
+            self.visitedurl.append(root)
+
             self.currentURL = self.urltovisit.pop(0)
-            if self.currentURL in self.visitedurl: continue
 
             # check robots.txt
             allow = self.robot.is_allowed("*",self.currentURL)
             if not allow: 
                 print("can't crawl")
                 continue
-
-            if self.currentURL in self.visitedURL: continue
-
-            startTimer = timeit.default_timer() # timer
 
             self.onelink(self.currentURL)
 
@@ -338,4 +325,3 @@ class spider:
                 sleep(0)
 
             yield self.currentURL,self.urltovisit
-

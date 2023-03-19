@@ -78,7 +78,7 @@ class DB():
     
     def get_visited_url(self,table,column,value,*sec_column):
         if not sec_column: sec_column = [column]
-        self.cursor.execute("SELECT {}.{} FROM {} WHERE {} LIKE '{}%'".format(table,column,table,sec_column[0],value))
+        self.cursor.execute("SELECT {}.{} FROM {} WHERE {} LIKE '{}%' OR {}='{}'".format(table,column,table,sec_column[0],value,sec_column[0],value))
         rows = self.cursor.fetchall()
         ans = [row[0] for row in rows]
 

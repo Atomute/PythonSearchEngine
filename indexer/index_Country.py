@@ -24,7 +24,7 @@ class Getcountry:
                     self.cursor.execute("SELECT country_id FROM Country WHERE countryISO=?", (country_code,))
                     country_id = self.cursor.fetchone()[0]
                     self.cursor.execute("INSERT INTO Website_country (website_id, wc_id) VALUES (?, ?)", (website_id, country_id))
-                    print(website_id, word)
+                    # print(website_id, word)
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()
@@ -49,7 +49,7 @@ class Getcountry:
                     self.cursor.execute("SELECT country_id FROM Country WHERE countryISO=?", (country_code,))
                     country_id = self.cursor.fetchone()[0]
                     self.cursor.execute("INSERT INTO Website_country (website_id, wc_id) VALUES (?, ?)", (website_id, country_id))
-                    print(website_url, word)
+                    # print(website_url, word)
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()

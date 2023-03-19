@@ -26,8 +26,8 @@ class InvertedIndex:
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()
-        print('finished')
-        print("--- %s seconds ---" % (time.time() - self.start_time))
+        # print('finished')
+        # print("--- %s seconds ---" % (time.time() - self.start_time))
 
     def index_websites(self):
         self.cursor.execute("SELECT websiteID, title, content FROM websites")
@@ -44,8 +44,8 @@ class InvertedIndex:
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()
-        print('finished')
-        print("--- %s seconds ---" % (time.time() - self.start_time))
+        # print('finished')
+        # print("--- %s seconds ---" % (time.time() - self.start_time))
 
     def get_words(self, title, content):
         words = []
@@ -94,7 +94,10 @@ class InvertedIndex:
         # Loop through each word in the inverted index
         self.cursor.execute("SELECT index_id FROM keyword")
         index_ids = [row[0] for row in self.cursor.fetchall()]
+        lenght = len(index_ids)
+        counter = 0
         for index_id in index_ids:
+            counter += 1
             # Get the documents that contain the word
             self.cursor.execute("SELECT websiteID, frequency FROM website_inverted_index WHERE index_id=?", (index_id,))
             rows = self.cursor.fetchall()
@@ -109,5 +112,7 @@ class InvertedIndex:
                 tf = row[1]
                 tfidf = tf * idf
                 self.cursor.execute("UPDATE website_inverted_index SET tfidf=? WHERE websiteID=? AND index_id=?", (tfidf, website_id, index_id))
+                self.conn.commit()
+            yield counter*100/lenght
         
-        self.conn.commit()
+        
