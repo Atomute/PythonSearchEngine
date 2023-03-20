@@ -1,25 +1,25 @@
 import sys
 import sqlite3
 import timeit
-from PyQt5.QtWidgets import QListWidget,QTabWidget,QMainWindow,QMessageBox, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTableWidget, QTableWidgetItem
-from PyQt5.QtGui import QFont, QIcon, QDesktopServices
-from PyQt5.QtCore import Qt, QUrl, QObject, QThread, pyqtSignal
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QListWidget,QTabWidget,QMainWindow, QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTableWidget, QTableWidgetItem, QProgressBar
+from PyQt5.QtGui import QFont, QDesktopServices
+from PyQt5.QtCore import Qt, QUrl, QThread, pyqtSignal
+from PyQt5 import QtCore, QtWidgets
 from time import sleep
 from urllib.parse import urlparse
 sys.path.insert(1,"./")
-from indexer.index_cleaner import Cleaning
 from indexer.index_Country import Getcountry
 from spider.spider import spider
-from runner import Runner
 from indexer.index_inverter import InvertedIndex
 from indexer.index_Country import Getcountry
 from database.DB_sqlite3 import DB
 from search.searcher import searcher
 
+database_name = "testt.sqlite3"
+
 class tfidfWorker(QThread):
     finished = pyqtSignal()
-    progress = pyqtSignal(str)
+    progress = pyqtSignal(int)
 
     def run(self):
         print("TFIDF Thread Working")
@@ -28,7 +28,7 @@ class tfidfWorker(QThread):
         for progression in self.indexer.calculate_tfidf():
             while self.is_pause:
                 sleep(0)
-            self.progress.emit(progression)
+            self.progress.emit(int(progression))
 
         self.finished.emit()
 
@@ -40,6 +40,7 @@ class spiderworker(QThread):
     uporin = pyqtSignal(str)
     progress = pyqtSignal(str)
     Upload_status = pyqtSignal(str)
+    updatepbar = pyqtSignal(int)
 
     def __init__(self,urls,*depth,parent=None):
         super().__init__(parent)
@@ -53,17 +54,16 @@ class spiderworker(QThread):
         self.spider = spider()
         self.get_country = Getcountry()
         self.indexer = InvertedIndex()
-        self.db = DB("testt.sqlite3")
+        self.db = DB(database_name)
         self.spider.db = self.db
     
         existURLs = self.db.get_column("websites","URL")
 
-        for url in self.urls.split(","):
+        urls = self.urls.split(",")
+        count = 0
+        for url in urls:
             while self.is_pause:
                 sleep(0)
-
-            if self.is_kill:
-                break
 
             if url in existURLs: 
                 # this will update that link
@@ -73,16 +73,21 @@ class spiderworker(QThread):
             else:
                 # this will insert that link
                 self.uporin.emit("insert")
+
                 for cururl,urltovisit in self.spider.run(url,self.depth):
+                    count += 1
                     if urltovisit != []:
                         self.spider.push_log(urltovisit)
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites_one(cururl)
 
-                    self.spider.push_exlinkDomain()
-                    self.spider.counter()
                     self.progress.emit("Indexed "+cururl)
+                    self.updatepbar.emit(int(count*100/len(urls)))
+                self.spider.counter()
+
+            if self.is_kill:
+                break
                 
         self.finished.emit()
 
@@ -95,7 +100,6 @@ class spiderworker(QThread):
             self.Upload_status.emit("Continue")
 
     def kill(self):
-
         self.spider.kill()
         self.is_kill = True
 
@@ -103,7 +107,7 @@ class SearchEngine(QMainWindow):
     def __init__(self):
         super().__init__()
         # Connect to database
-        self.db = DB("testt.sqlite3")
+        self.db = DB(database_name)
         self.index=InvertedIndex()
         self.country = Getcountry()
         self.initUI()
@@ -113,7 +117,6 @@ class SearchEngine(QMainWindow):
         self.setGeometry(100,100,1000,700)
 #---------------------------------
 # Create a Country tab
-
         self.tabWidget = QTabWidget(self)
         self.setCentralWidget(self.tabWidget)
 
@@ -162,6 +165,9 @@ class SearchEngine(QMainWindow):
 # Create the uplink tab 
         self.uplinkTab = QWidget(self)
         self.tabWidget.addTab(self.uplinkTab, 'Uplink')
+
+        # ProgressBar
+        self.pbar = QProgressBar(self.uplinkTab)
 
         # Uplink input text
         self.uplinkLabel = QLabel('Enter a URL:', self.uplinkTab)
@@ -219,8 +225,12 @@ class SearchEngine(QMainWindow):
         grid.addWidget(self.killbtn, 4, 3)
         grid.addWidget(self.caltfidf, 7, 3)
         grid.addWidget(self.urlList2, 2,3,1,3)
+        grid.addWidget(self.pbar)
 
         self.updateLOG()
+
+        if None in self.db.get_column("website_inverted_index","tfidf"):
+            self.searchButton.setEnabled(False)
 
     def updateLOG(self):
         # add item in logging list
@@ -271,12 +281,17 @@ class SearchEngine(QMainWindow):
         start = timeit.default_timer()
         searchTable = []
         query = self.searchBox.text()
+        if query.strip() == '': return
         self.Mysearcher = searcher()
         results = self.Mysearcher.search(query)
-    
-        for result in results:
-            webID = result[0]
-            score = result[1]
+
+        if not results:
+            self.updateResultTable([])
+            return
+
+        for id in results[0]:
+            webID = id
+            score = results[0][id]
             self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID={}".format(webID))
             title, url = self.db.cursor.fetchone()
             searchTable.append((title,url,score))
@@ -307,7 +322,6 @@ class SearchEngine(QMainWindow):
         count = len(websites)
         self.resultCountLabel.setText(f'Result found: {count}')
 
-
     def openUrl(self, row, column):
         if column == 1:
             url = self.resultTable.item(row, column).text()
@@ -319,7 +333,7 @@ class SearchEngine(QMainWindow):
             self.resultWindow.show()
 
     def get_content(self,website_name):
-        conn = sqlite3.connect('testt.sqlite3')
+        conn = sqlite3.connect(database_name)
         c = conn.cursor()
 
         # Get the content column for the specified website name
@@ -337,7 +351,6 @@ class SearchEngine(QMainWindow):
         self.worker = spiderworker(urls)
 
         self.worker.progress.connect(self.reportProgress)
-        self.worker.uporin.connect(self.uporintype)
         self.worker.Upload_status.connect(self.pauseORcontinue)
         self.worker.finished.connect(self.thread_finish)
 
@@ -349,6 +362,7 @@ class SearchEngine(QMainWindow):
 
     def uploadlink(self):
         url = self.uplinkBox.text()
+
         if urlparse(url).scheme and urlparse(url).netloc:
             # The input is a valid URL
             self.worker = spiderworker(url)
@@ -358,23 +372,44 @@ class SearchEngine(QMainWindow):
             self.worker.finished.connect(self.thread_finish)
 
             self.worker.start()
+
             self.killbtn.setEnabled(True)  # enable the kill button
             self.pausebtn.setEnabled(True)  # enable the pause button
             self.uplinkButton.setEnabled(False)
             self.deleteButton.setEnabled(False)
+            self.Update_all.setEnabled(False)
+            self.caltfidf.setEnabled(False)
+            self.urlList2.setEnabled(False)
         else:
             # The input is not a valid URL
             self.urlList.addItem("Invalid URL")
             
     def TFIDF(self):
+        self.urlList.addItem("Calculating TF-IDF")
         self.tfidfworker = tfidfWorker()
-        self.tfidfworker.progress.connect(self.reportProgress)
-        self.tfidfworker.finished.connect(self.thread_finish)
+        self.tfidfworker.progress.connect(self.progressBar)
+        self.tfidfworker.finished.connect(self.tfidf_finish)
 
         self.tfidfworker.start()
 
+        self.uplinkButton.setEnabled(False)
+        self.deleteButton.setEnabled(False)
+        self.Update_all.setEnabled(False)
+        self.caltfidf.setEnabled(False)
+        self.urlList2.setEnabled(False)
+
+    def tfidf_finish(self):
+        self.searchButton.setEnabled(True)
+
+        self.urlList.addItem("Done")
+        self.uplinkButton.setEnabled(True)
+        self.deleteButton.setEnabled(True)
+        self.Update_all.setEnabled(True)
+        self.caltfidf.setEnabled(True)
+        self.urlList2.setEnabled(True)
+
     def updateAll_btn(self):
-        db = DB("testt.sqlite3")
+        db = DB(database_name)
         spiderman = spider()
         spiderman.db = db
         urls = db.get_column("websites","URL")
@@ -390,15 +425,19 @@ class SearchEngine(QMainWindow):
 
         self.worker = spiderworker(urls,0)
 
-        self.worker.progress.connect(self.progressBar)
+        self.worker.progress.connect(self.reportProgress)
         self.worker.Upload_status.connect(self.pauseORcontinue)
         self.worker.finished.connect(self.thread_finish)
+        self.worker.updatepbar.connect(self.progressBar)
         self.worker.start()
 
         self.killbtn.setEnabled(True)  # enable the kill button
         self.pausebtn.setEnabled(True)  # enable the pause button
         self.uplinkButton.setEnabled(False)
         self.deleteButton.setEnabled(False)
+        self.Update_all.setEnabled(False)
+        self.caltfidf.setEnabled(False)
+        self.urlList2.setEnabled(False)
 
     def delete_btn(self):
         urls = self.uplinkBox.text()
@@ -414,15 +453,24 @@ class SearchEngine(QMainWindow):
         self.urlList.clear()
         self.uplinkBox.clear()
 
+        self.killbtn.setEnabled(False)
+        self.pausebtn.setEnabled(False)
+        self.searchButton.setEnabled(False)
         self.uplinkButton.setEnabled(True)
         self.deleteButton.setEnabled(True)
+        self.urlList2.setEnabled(True)
+        self.caltfidf.setEnabled(True)
+        self.Update_all.setEnabled(True)
 
     def start_stop_btn(self):
         self.worker.start_stop()  
+    
+    def start_stop_tfidf(self):
         self.tfidfworker.start_stop()
 
-    def progressBar(self):
-        pass
+    def progressBar(self,progress):
+        progress = int(progress)
+        self.pbar.setValue(progress)
 
     def pauseORcontinue(self,status):
         self.urlList.addItem(status)  
@@ -437,6 +485,9 @@ class SearchEngine(QMainWindow):
         self.urlList.addItem("Done")
         self.uplinkButton.setEnabled(True)
         self.deleteButton.setEnabled(True)
+        self.urlList2.setEnabled(True)
+        self.Update_all.setEnabled(True)
+        self.caltfidf.setEnabled(True)
 
 #----------------------------
 #Sub widget
@@ -500,4 +551,3 @@ if __name__ == '__main__':
     searchEngine = SearchEngine()
     searchEngine.show()
     sys.exit(app.exec_())
-

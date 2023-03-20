@@ -32,7 +32,7 @@ class DB():
     def insert_exlink(self,websiteID,exlink):
         # insert keywords to keywords table
         value = (websiteID,exlink)
-        query = "INSERT INTO backlinks VALUES (?, ?)"
+        query = "INSERT INTO externalDomain VALUES (?, ?)"
         self.cursor.execute(query, value)
 
     def insert_Websites_Domain(self,websitID,domainID):

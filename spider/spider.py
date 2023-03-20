@@ -111,11 +111,12 @@ class spider:
         if urls == []:
             return
         websiteID = self.db.get_ID("websites","URL",self.currentURL)
-        if websiteID in self.db.get_column("backlinks","websiteID"): 
+        if websiteID in self.db.get_column("externalDomain","websiteID"): 
             self.exlinks = []
             return
         for url in urls:
-            self.db.insert_exlink(websiteID,url)
+            domain = self.extractDomain(url)
+            self.db.insert_exlink(websiteID,domain)
         self.db.commit()
 
         self.exlinks = []
@@ -123,10 +124,8 @@ class spider:
     def push_exlinkDomain(self):
         # push external link domain to database
         # print("pushing external link to domain table")
+        self.db.cursor.execute("DELETE FROM Websites_Domain")
         backlinks = self.db.get_table("backlinks")
-        lastWebID = self.db.get_column("Websites_Domain","websiteID")
-        if lastWebID == []: lastWebID=[0]
-        lastWebID = lastWebID[-1]
 
         progresscounter = 0
         for row in backlinks:
@@ -134,7 +133,6 @@ class spider:
             url = row[1]
             progresscounter += 1
             # print(f"{progresscounter}/{len(backlinks)}",end="\r")
-            if websiteID<lastWebID: continue
 
             domain = self.extractDomain(url)
             self.push_domain(domain)
@@ -174,6 +172,11 @@ class spider:
             self.indexer.indexOneWebsite(url)
             self.country.find_c_websites_one(url)
             self.push_backlinks(self.exlinks)
+            self.db.cursor.execute("SELECT remaining FROM log WHERE root='{}'".format(self.root))
+            remaining = self.db.cursor.fetchone()[0]
+            for url in self.urltovisit:
+                print(url)
+            # self.push_log()
             self.urltovisit = []
             
         self.push_exlinkDomain()
@@ -229,15 +232,15 @@ class spider:
         self.db.dump_table()
 
     def domain_counter(self):
-        domains = self.db.get_column("Websites_Domain","domainID")
+        domains = self.db.get_column("externalDomain","exDomain")
         counter = dict(Counter(domains))
-        oriDomain = self.db.get_column("domain","domainID")
+        oriDomain = self.db.get_column("domain","domainName")
 
-        for domainID in oriDomain:
-            if domainID in counter:
-                self.db.cursor.execute("UPDATE domain SET count = {} WHERE domainID = {}".format(counter[domainID],domainID))
-            else:
-                self.db.dump_record("domain","domainID",domainID)
+        for domain in oriDomain:
+            if domain in counter:
+                self.db.cursor.execute("UPDATE domain SET count = {} WHERE domainName = '{}'".format(counter[domain],domain))
+            # else:
+            #     self.db.dump_record("domain","domainID",domainID)
         self.db.commit()
 
     def index_counter(self):
@@ -260,10 +263,17 @@ class spider:
                 self.db.dump_record("Country","country_id",CountryID)
         self.db.commit()
 
+    def log_counter(self):
+        remainings = self.db.get_column("log","remaining")
+        for remaining in remainings:
+            if not remaining:
+                self.db.dump_record("log","remaining",None)
+
     def counter(self):
         self.domain_counter()
         self.index_counter()
         self.country_counter()
+        self.log_counter()
 
 # UI related function --------------------------------------------------------------------------------------------------------------------------------------------
     def start_stop(self):
@@ -313,15 +323,20 @@ class spider:
                 continue
 
             self.onelink(self.currentURL)
+            
 
             stopTimer = timeit.default_timer()
             print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
 
             if self.is_kill:
                 self.urltovisit = []
-                break
+                # self.push_exlinkDomain()
+
+                self.counter()
+                return self.currentURL,self.urltovisit
 
             while self.is_pause:
                 sleep(0)
 
             yield self.currentURL,self.urltovisit
+        # self.push_exlinkDomain()

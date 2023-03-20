@@ -2,3 +2,4 @@ __pycache__
 sandbox
 venv
 testt.sqlite3
+DB.sqlite3
