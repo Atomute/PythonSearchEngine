@@ -1,0 +1,116 @@
+import plotly
+import plotly.graph_objs as go
+import plotly.express as px
+import sqlite3
+import pandas as pd
+import os
+#Sub widget
+class WebsiteDetailsWindow(QtWidgets.QWidget):
+    def __init__(self, title, url, content):
+        super().__init__()
+
+        self.setWindowTitle(title)
+        self.setGeometry(100, 100, 1000, 803)
+
+        # Create the tab widget
+        self.tabWidget = QtWidgets.QTabWidget(self)
+
+        # Create the content tab
+        self.content_tab = QtWidgets.QWidget(self)
+        self.content_tab_layout = QtWidgets.QVBoxLayout(self.content_tab)
+        self.content_tab.setLayout(self.content_tab_layout)
+        self.tabWidget.addTab(self.content_tab, 'Content')
+
+        # title label
+        self.titleLabel = QtWidgets.QLabel(self.content_tab)
+        self.titleLabel.setObjectName("titleLabel")
+        self.titleLabel.setText("Title: {}".format(title))
+        self.content_tab_layout.addWidget(self.titleLabel)
+
+        # URL label
+        self.urlLabel = QtWidgets.QLabel(self.content_tab)
+        self.urlLabel.setObjectName("urlLabel")
+        self.urlLabel.setText("URL: {}".format(url))
+        self.content_tab_layout.addWidget(self.urlLabel)
+
+        # content text edit
+        self.contentTextEdit = QtWidgets.QPlainTextEdit(self.content_tab)
+        self.contentTextEdit.setObjectName("contentTextEdit")
+        self.contentTextEdit.setPlainText(content)
+        self.content_tab_layout.addWidget(self.contentTextEdit)
+
+        # spatial tab
+        self.spatial_tab = QtWidgets.QWidget(self)
+        self.spatial_tab_layout = QtWidgets.QVBoxLayout(self.spatial_tab)
+        self.spatial_tab.setLayout(self.spatial_tab_layout)
+        self.tabWidget.addTab(self.spatial_tab, 'Spatial')
+
+        # # Create the HTML file for the plot
+        # self.html_path = os.path.abspath("map.html")
+        # self.create_map()
+
+        # Create the web view to display the plot
+        self.webview = QtWebEngineWidgets.QWebEngineView(self.spatial_tab)
+        self.webview.setObjectName('webview')
+        # self.webview.load(QtCore.QUrl.fromLocalFile(self.html_path))
+        self.spatial_tab_layout.addWidget(self.webview)
+
+
+        conn = sqlite3.connect('testt.sqlite3')
+        query = f"SELECT * FROM Country INNER JOIN Website_country ON Country.country_id = Website_country.wc_id JOIN websites ON websites.websiteID = Website_country.website_id WHERE URL='{url}'"
+        df = pd.read_sql_query(query, conn)
+
+        if not df.empty:
+            # Create the choropleth map
+            fig = px.choropleth(df, locations="countryISO", color="frequency",
+                                hover_name="country",
+                                projection="natural earth")
+            html ='<html><body>'
+            html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
+            html += '</body></html>'
+            self.webview.setHtml(html)
+        else:
+            # Set the HTML to an empty message
+            fig = px.choropleth(projection="natural earth")
+            html ='<html><body>'
+            html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
+            html += '</body></html>'
+            self.webview.setHtml(html)
+        # Set the layout for the main widget
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.layout().addWidget(self.tabWidget)
+
+
+
+    def retranslateUi(self, Form):
+        _translate = QtCore.QCoreApplication.translate
+        Form.setWindowTitle(_translate("Form", self.title))
+        self.pushButton.setText(_translate("Form", "Close"))
+    
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    searchEngine = SearchEngine()
+    searchEngine.show()
+    sys.exit(app.exec_())
+
+
+
+
+            # Create the search tab and add it to the tab widget
+        self.Country_allTab = QWidget(self)
+        self.tabWidget.addTab(self.Country_allTab, 'All country')
+
+        # Create the webview widget and layout
+        self.layout = QtWidgets.QVBoxLayout(self.Country_allTab)
+        self.webview = QtWebEngineWidgets.QWebEngineView()
+        self.layout.addWidget(self.webview)
+
+        # Load the choropleth map into the webview
+        conn = sqlite3.connect('testt.sqlite3')
+        query = "SELECT * FROM Country INNER JOIN Website_country ON Country.country_id = Website_country.wc_id"
+        df = pd.read_sql_query(query, conn)
+        fig = px.choropleth(df, locations="countryISO", color="frequency",
+                            hover_name="country",
+                            projection="natural earth")
+        html = plotly.offline.plot(fig, output_type='div', include_plotlyjs='cdn')
+        self.webview.setHtml(html)
