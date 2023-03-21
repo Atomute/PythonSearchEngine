@@ -51,6 +51,7 @@ class spiderworker(QThread):
         self.depth = depth[0]
 
     def run(self):
+        self.is_kill = False
         self.spider = spider()
         self.get_country = Getcountry()
         self.indexer = InvertedIndex()
@@ -61,7 +62,8 @@ class spiderworker(QThread):
 
         urls = self.urls.split(",")
         count = 0
-        for url in urls:
+        while urls:
+            url = urls.pop()
             while self.is_pause:
                 sleep(0)
 
@@ -75,18 +77,22 @@ class spiderworker(QThread):
                 self.uporin.emit("insert")
 
                 for cururl in self.spider.run(url,self.depth):
-                    count += 1
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites_one(cururl)
 
                     self.progress.emit("Indexed "+cururl)
-                    self.updatepbar.emit(int(count*100/len(urls)))
-                self.spider.counter()
+                    if len(urls) != 0:
+                        self.updatepbar.emit(int(count*100/len(urls)))
 
             if self.is_kill:
+                if self.spider.urltovisit != []:
+                    urls = self.spider.urltovisit
+                self.spider.push_log(urls,self.spider.withDepth)
                 break
-                
+
+            self.spider.counter()
+
         self.finished.emit()
 
     def start_stop(self):
@@ -236,7 +242,6 @@ class SearchEngine(QMainWindow):
         for index in range(self.urlList2.count()):
             items.append(self.urlList2.item(index).text())
         unfinish = self.db.get_column("log","root")
-        print(items)
         if unfinish != []:
             for url in unfinish:
                 if url in items:
@@ -371,6 +376,7 @@ class SearchEngine(QMainWindow):
             self.worker.progress.connect(self.reportProgress)
             self.worker.uporin.connect(self.uporintype)
             self.worker.Upload_status.connect(self.pauseORcontinue)
+            self.worker.updatepbar.connect(self.progressBar)
             self.worker.finished.connect(self.thread_finish)
 
             self.worker.start()

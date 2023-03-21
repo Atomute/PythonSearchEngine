@@ -59,7 +59,6 @@ class Cleaning:
             else :
                 a = self.Normalize(word)
                 b = self.Remove_uni(a)
-                # print(b)
                 c = self.Remove_stopw(b)
                 d = self.Lemma(c)
                 for i in d:
