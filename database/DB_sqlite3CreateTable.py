@@ -35,14 +35,14 @@ def create_database(dbName):
     createCountry = """CREATE TABLE IF NOT EXISTS Country (
                     country_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     country TEXT UNIQUE NOT NULL,
-                    countryISO TEXT,
-                    frequency INTEGER NOT NULL
+                    countryISO TEXT
                       )"""
     cursor.execute(createCountry)
 
     createWebsite_country = """CREATE TABLE IF NOT EXISTS Website_country (
                                 website_id INTEGER NOT NULL,
                                 wc_id INTEGER NOT NULL,
+                                frequency INTEGER DEFAULT 0,
                                 FOREIGN KEY (website_id) REFERENCES Websites (websiteID) ON DELETE CASCADE,
                                 FOREIGN KEY (wc_id) REFERENCES Country (country_id))"""
     cursor.execute(createWebsite_country)
@@ -51,7 +51,7 @@ def create_database(dbName):
                                     websiteID INTEGER NOT NULL,
                                     index_id INTEGER NOT NULL,
                                     frequency INTEGER NOT NULL,
-                                    tfidf REAL,
+                                    tfidf REAL DEFAULT 0.0,
                                     FOREIGN KEY(websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
                                     FOREIGN KEY(index_id) REFERENCES keyword(index_id))"""
     cursor.execute(createWebsite_inverted_index)
