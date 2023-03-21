@@ -17,6 +17,9 @@ from search.searcher import searcher
 
 database_name = "testt.sqlite3"
 
+class deleteworker(QThread):
+    pass
+
 class tfidfWorker(QThread):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
@@ -35,6 +38,32 @@ class tfidfWorker(QThread):
     def start_stop(self):
         self.is_pause = not self.is_pause
 
+# class spiderworker(QThread):
+#     finished = pyqtSignal()
+#     progress = pyqtSignal(str)
+#     uporin = pyqtSignal(str)
+
+#     def __init__(self, url,depth,insert,parent=None):
+#         super().__init__(parent)
+#         self.url = url
+#         self.max_depth = depth
+#         self.is_update = insert
+
+#     def run(self):
+#         self.spider2 = spider()
+#         self.db = DB("testt.sqlite3")
+#         if self.url in self.db.get_column("websites","URL"):
+#             self.uporin.emit("Update")
+#             self.spider2.updateone(self.url)
+#         else:
+#             self.uporin.emit("insert")
+#             for i in self.spider2.new_run(self.url,self.max_depth,0,self.is_update):
+#                 self.db.cursor.execute("SELECT URL FROM websites ORDER BY websiteID DESC LIMIT 1")
+#                 status = self.db.cursor.fetchone()[0]
+#                 self.progress.emit(status)
+
+#         self.finished.emit()
+  
 class spiderworker(QThread):
     finished = pyqtSignal()
     uporin = pyqtSignal(str)
@@ -47,7 +76,7 @@ class spiderworker(QThread):
         self.urls = urls
         self.is_pause = False
         self.is_kill = False
-        if not depth: depth = [1]
+        if not depth: depth = [None]
         self.depth = depth[0]
 
     def run(self):
@@ -64,6 +93,7 @@ class spiderworker(QThread):
         count = 0
         while urls:
             url = urls.pop()
+            
             while self.is_pause:
                 sleep(0)
 
@@ -162,8 +192,6 @@ class SearchEngine(QMainWindow):
         grid.addWidget(self.resultTable, 2, 0, 1, 3)
 
         # Create the search tab and add it to the tab widget
-        self.Country_allTab = QWidget(self)
-        self.tabWidget.addTab(self.Country_allTab, 'All country')
 
 #---------------------------------  
 # Create the uplink tab 
@@ -217,19 +245,26 @@ class SearchEngine(QMainWindow):
         self.caltfidf.setFont(QFont('Arial', 14))
         self.caltfidf.clicked.connect(self.TFIDF)
 
+        self.deptLabel = QLabel('Dept:', self.uplinkTab)
+        self.deptLabel.setFont(QFont('Arial', 10))
+        self.deptBox = QLineEdit(self.uplinkTab)
+        self.deptBox.setFont(QFont('Arial', 14))
+
         # Add widgets to a grid layout
         grid = QGridLayout(self.uplinkTab)
         grid.addWidget(self.uplinkLabel, 0, 0)
         grid.addWidget(self.uplinkBox, 0, 1)
-        grid.addWidget(self.uplinkButton, 0, 2)
-        grid.addWidget(self.deleteButton, 0, 3)
-        grid.addWidget(self.pausebtn, 5, 3)
-        grid.addWidget(self.Update_all,6,3)
+        grid.addWidget(self.uplinkButton, 0, 4)
+        grid.addWidget(self.deptLabel, 0, 2,)
+        grid.addWidget(self.deptBox,0,3)
+        grid.addWidget(self.deleteButton, 0, 5)
+        grid.addWidget(self.pausebtn, 5, 5)
+        grid.addWidget(self.Update_all,6,5)
         grid.addWidget(self.urlList, 2, 0, 8, 3)
-        grid.addWidget(self.killbtn, 4, 3)
-        grid.addWidget(self.caltfidf, 7, 3)
+        grid.addWidget(self.killbtn, 4, 5)
+        grid.addWidget(self.caltfidf, 7, 5)
         grid.addWidget(self.urlList2, 2,3,1,3)
-        grid.addWidget(self.pbar)
+        grid.addWidget(self.pbar, 3,4,1,2)
 
         self.updateLOG()
 
@@ -248,37 +283,6 @@ class SearchEngine(QMainWindow):
                     continue
                 else:
                     self.urlList2.addItem(url)
-
-#---------------------------------  
-#Function in btn
-    # def search(self):
-    #     sentence = self.searchBox.text()
-    #     words = Cleaning().process_text(sentence)
-    #     index_ids = []
-    #     for word in words:
-    #         self.db.cursor.execute("SELECT index_id FROM keyword WHERE word=?", (word,))
-    #         result = self.db.cursor.fetchone()
-    #         if result is not None:
-    #             index_ids.append(result[0])
-    #     if len(index_ids) == 0:
-    #         self.updateResultTable([])
-    #     else:
-    #         # Updated query to use the tfidf column instead of the frequency column
-    #         self.db.cursor.execute("""SELECT websiteID, SUM(tfidf), COUNT(websiteID)
-    #                                  FROM website_inverted_index 
-    #                                  WHERE index_id IN ({}) 
-    #                                  GROUP BY websiteID 
-    #                                  ORDER BY SUM(tfidf) DESC""".format(",".join(str(i) for i in index_ids)))
-    #         results = self.db.cursor.fetchall()
-    #         websites = []
-    #         for result in results:
-    #             website_id = result[0]
-    #             tfidf_sum = result[1]
-    #             score = tfidf_sum*result[2]
-    #             self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID=?", (website_id,))
-    #             title, url = self.db.cursor.fetchone()
-    #             websites.append((title, url, score))
-    #         self.updateResultTable(websites)
 
     def search(self):
         start = timeit.default_timer()
@@ -369,10 +373,17 @@ class SearchEngine(QMainWindow):
 
     def uploadlink(self):
         url = self.uplinkBox.text()
+        if url.endswith("/"):
+            url = url[:-1]
+        depth = self.deptBox.text()
+        if depth != '':
+            depth = int(depth)
+        else:
+            depth = None
 
         if urlparse(url).scheme and urlparse(url).netloc:
             # The input is a valid URL
-            self.worker = spiderworker(url)
+            self.worker = spiderworker(url,depth)
             self.worker.progress.connect(self.reportProgress)
             self.worker.uporin.connect(self.uporintype)
             self.worker.Upload_status.connect(self.pauseORcontinue)
