@@ -105,3 +105,11 @@ if __name__ == '__main__':
     searchEngine = SearchEngine()
     searchEngine.show()
     sys.exit(app.exec_())
+
+
+    SELECT Country.country, SUM(Website_country.frequency) as frequency_sum 
+FROM Country 
+INNER JOIN Website_country ON Country.country_id = Website_country.wc_id 
+JOIN websites ON Website_country.website_id = websites.websiteID 
+WHERE websites.URL IN ('url1', 'url2', 'url3')
+GROUP BY Country.country
