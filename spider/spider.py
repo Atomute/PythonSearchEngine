@@ -59,6 +59,41 @@ class spider:
         if title.text.isspace() or title.text == '': return
 
         return title.text.strip()
+    
+    def get_all_links(self,depth,*urls):
+        print("Depth = "+str(depth))
+        if depth == 0:
+            return self.urltovisit
+        newURL = []
+        if type(urls[0]) != str: urls = urls[0]
+        for url in urls:
+            html = requests.get(url).text
+            soup = BeautifulSoup(html,'html.parser')
+            links = soup.find_all('a')
+
+            for link in links:
+                path = link.get('href')
+                fullpath = urljoin(self.currentURL,path)
+                if fullpath.endswith("/"):
+                    fullpath = fullpath[:-1]
+
+                if not fullpath.startswith("https") or not fullpath.startswith("http"):
+                    continue
+
+                if fullpath in newURL or fullpath in self.urltovisit or fullpath in self.visitedurl:
+                    continue
+
+                if self.extractDomain(fullpath) != self.rootDomain:
+                    # external link in this page
+                    # self.exlinks.append(fullpath)
+                    continue
+                if  path == None or "#" in path:
+                    continue
+                
+                self.urltovisit.append(fullpath)
+                newURL.append(fullpath)
+        depth -= 1
+        return self.get_all_links(depth,newURL)
 
     def get_links(self,html):
         # find links in each webpages and add to urltovisit list
@@ -86,7 +121,8 @@ class spider:
             if  path == None or "#" in path:
                 continue
             
-            self.urltovisit.append(fullpath)
+            if self.depth == None or self.currentDepth >= 0:
+                self.urltovisit.append(fullpath)
         return self.urltovisit
     
     def push_domain(self,domain,*count):
@@ -139,7 +175,7 @@ class spider:
             domainID = self.db.get_ID("domain","domainName",domain)
             self.db.insert_Websites_Domain(websiteID,domainID)
 
-    def push_log(self,remaining):
+    def push_log(self,remaining,withDepth):
         root = self.db.get_column("log","root")
         is_in = self.root in root
         if root == [] and is_in:
@@ -151,7 +187,7 @@ class spider:
         if is_in:
             self.db.cursor.execute("UPDATE log SET remaining = ? WHERE root = ?",(strremaining,self.root))
         else:
-            self.db.cursor.execute("INSERT INTO log (root,remaining) VALUES (?, ?)",(self.root,strremaining))
+            self.db.cursor.execute("INSERT INTO log (root,remaining,withDepth) VALUES (?, ?, ?)",(self.root,strremaining,withDepth))
 
         self.db.commit()
 
@@ -168,18 +204,16 @@ class spider:
         if url in self.db.get_column("websites","URL"):
             self.removeone(url)
             
-        for url,unused in self.run(url):
+        for url in self.run(url,0):
             self.indexer.indexOneWebsite(url)
             self.country.find_c_websites_one(url)
             self.push_backlinks(self.exlinks)
-            self.db.cursor.execute("SELECT remaining FROM log WHERE root='{}'".format(self.root))
-            remaining = self.db.cursor.fetchone()[0]
+            
             for url in self.urltovisit:
                 print(url)
             # self.push_log()
             self.urltovisit = []
             
-        self.push_exlinkDomain()
         self.counter()
 
     def updateall(self):
@@ -197,8 +231,7 @@ class spider:
         title = self.get_title(html)
         value = (url,title,content,datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-        if self.depth == None or self.currentDepth != 0:
-            self.get_links(html)
+        self.get_links(html)
 
         self.push_websites(value,self.currentURL)
         self.push_backlinks(self.exlinks)
@@ -264,10 +297,13 @@ class spider:
         self.db.commit()
 
     def log_counter(self):
-        remainings = self.db.get_column("log","remaining")
-        for remaining in remainings:
-            if not remaining:
-                self.db.dump_record("log","remaining",None)
+        self.db.cursor.execute("SELECT root, remaining FROM log")
+        results = self.db.cursor.fetchall()
+        for result in results:
+            root = result[0]
+            remaining = result[1]
+            if remaining == '':
+                self.db.dump_record("log","root",root)
 
     def counter(self):
         self.domain_counter()
@@ -296,47 +332,64 @@ class spider:
         self.urltovisit.append(root)
         
         # initial setup
-        self.depth = depth
-
-        if not depth or depth == (None,): self.depth=None
-        else: self.currentDepth = self.depth[0]
-
         self.rootDomain = self.extractDomain(root)
         if not self.rootDomain in self.db.get_column("domain","domainName"): 
             self.push_domain(self.rootDomain)
+
+        withDepth = None
+        if not depth or depth == (None,): 
+            self.depth=None
+            withDepth = "False"
+        elif depth: 
+            print("find all the link")
+            self.currentURL = root
+            self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
+            self.visitedurl.append(root)
+            self.get_all_links(depth[0],root)
+            self.depth = 0
+            withDepth ="True"
+        self.push_log(self.urltovisit,withDepth)
 
         self.robot.fetch(self.root+"robots.txt")
         
         # loop to visit the choosen link and scraped them
         while self.urltovisit:
-            startTimer = timeit.default_timer() # timer
+            try:
+                startTimer = timeit.default_timer() # timer
 
-            self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
-            self.visitedurl.append(root)
+                self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
+                self.visitedurl.append(root)
 
-            self.currentURL = self.urltovisit.pop(0)
+                self.currentURL = self.urltovisit.pop(0)
 
-            # check robots.txt
-            allow = self.robot.is_allowed("*",self.currentURL)
-            if not allow: 
-                print("can't crawl")
-                continue
+                # check robots.txt
+                allow = self.robot.is_allowed("*",self.currentURL)
+                if not allow: 
+                    print("can't crawl")
+                    continue
 
-            self.onelink(self.currentURL)
-            
+                self.onelink(self.currentURL)
+                
 
-            stopTimer = timeit.default_timer()
-            print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
+                stopTimer = timeit.default_timer()
+                print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
 
-            if self.is_kill:
-                self.urltovisit = []
-                # self.push_exlinkDomain()
+                if self.is_kill:
+                    if self.urltovisit != []:
+                        self.push_log(self.urltovisit,withDepth)
+                    self.urltovisit = []
+                    # self.push_exlinkDomain()
 
-                self.counter()
-                return self.currentURL,self.urltovisit
+                    self.counter()
+                    return self.currentURL
 
-            while self.is_pause:
-                sleep(0)
+                while self.is_pause:
+                    sleep(0)
 
-            yield self.currentURL,self.urltovisit
+                yield self.currentURL
+            except Exception as e:
+                print(e)
+                pass
+        self.push_log(self.urltovisit,withDepth)
+        self.counter()
         # self.push_exlinkDomain()

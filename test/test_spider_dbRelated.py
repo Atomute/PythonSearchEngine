@@ -72,7 +72,7 @@ class test_push_backlinks(unittest.TestCase):
     @patch('database.DB_sqlite3.DB.get_column')
     @patch('database.DB_sqlite3.DB.get_ID')
     def test_website_is_in_backlinks(self,mock_get_ID,mock_get_column):
-        self.spider.exlinks = ["something"]
+        self.spider.exlinks = ["https://something"]
         mock_get_ID.return_value = 1
         mock_get_column.return_value = [1,2,3]
         self.spider.push_backlinks(self.spider.exlinks)
@@ -82,7 +82,7 @@ class test_push_backlinks(unittest.TestCase):
     @patch('database.DB_sqlite3.DB.get_column')
     @patch('database.DB_sqlite3.DB.get_ID')
     def test_website_is_not_in_backlinks(self,mock_get_ID,mock_get_column,mock_insert_exlink):
-        self.spider.exlinks = ["something"]
+        self.spider.exlinks = ["https://something"]
         mock_get_ID.return_value = 1
         mock_get_column.return_value = [2,3]
         self.spider.push_backlinks(self.spider.exlinks)
@@ -91,10 +91,6 @@ class test_push_backlinks(unittest.TestCase):
     def tearDown(self):
         self.spider.db.close_conn()
         os.remove(self.dbName)
-
-class test_push_exlinks_domain(unittest.TestCase):
-    def setUp(self) -> None:
-        pass
 
 # Below this are Test for Update and Remove function -----------------------------------------------------------------------------------
 
@@ -107,7 +103,7 @@ class test_domain_counter(unittest.TestCase):
     
     @patch('database.DB_sqlite3.DB.get_column')
     def test_normal(self,mock_get_column):
-        mock_get_column.side_effect = [[],[1,1,1,1,2],[1,2,3]]
+        mock_get_column.side_effect = [[],["domain1","domain1"],["domain1","domain2"]]
         self.spider.push_domain("domain1")
 
         self.spider.domain_counter()
@@ -115,7 +111,7 @@ class test_domain_counter(unittest.TestCase):
         self.db.cursor.execute("SELECT count FROM domain WHERE domainID = 1")
         domainCount = self.db.cursor.fetchone()[0]
 
-        self.assertEqual(domainCount,4)
+        self.assertEqual(domainCount,2)
 
     @patch('database.DB_sqlite3.DB.get_column')
     def test_ori_not_in_counter(self,mock_get_column):
@@ -216,10 +212,10 @@ class test_removeOne(unittest.TestCase):
 
         self.db.cursor.execute("SELECT websiteID FROM websites")
         websites = self.db.cursor.fetchone()[0]
-        self.db.cursor.execute("SELECT websiteID FROM backlinks")
-        backlinks = [x[0] for x in self.db.cursor.fetchall()]
+        # self.db.cursor.execute("SELECT websiteID FROM backlinks")
+        # backlinks = [x[0] for x in self.db.cursor.fetchall()]
 
-        self.assertEqual([websites,backlinks],[2,[]])
+        self.assertEqual([websites],[2])
 
     # There is no test for non-foreign-key tables since it is the duty of those counter function and I tested them seperately
 

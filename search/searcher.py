@@ -14,16 +14,12 @@ class searcher:
 
     def scoreWord(self,terms):
         ans = {}
-        self.db.cursor.execute("""SELECT websiteID, COUNT(websiteID)*SUM(tfidf) AS score 
-                                FROM website_inverted_index 
-                                WHERE index_id IN ({}) 
-                                GROUP BY websiteID 
-                                ORDER BY score DESC""".format(",".join(str(i) for i in terms)))
-        results = self.db.cursor.fetchall()
+        results = self.db.get_word_for_search(terms)
 
         maxScore = results[0][1]
         minScore = results[-1][1]
         scoreRange = maxScore-minScore
+
         if scoreRange == 0: scoreRange = 1
         for result in results:
             websiteID = result[0]
@@ -33,28 +29,24 @@ class searcher:
         return ans
     
     def scoreDoc(self,scoreDict):
-        # domainScore = {}
-        self.db.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
-        result = self.db.cursor.fetchall()[0]
+        result = self.db.get_MaxMin_Domain()
         max = result[0]
         min = result[1]
         scoreRange = max-min
         if scoreRange == 0: scoreRange=1
 
         for webID in scoreDict:
-            self.db.cursor.execute("SELECT URL FROM websites WHERE websiteID={}".format(webID))
-            url = self.db.cursor.fetchone()[0]
+            url = self.db.get_column_specific("websites","URL",webID,"websiteID")[0]
 
             domain = self.spider.extractDomain(url)
-            self.db.cursor.execute("SELECT count FROM domain WHERE domainName='{}'".format(domain))
-            count = self.db.cursor.fetchone()
+            count = self.db.get_column_specific("domain","count",domain,"domainName")
             if not count: count = [min]
             count = count[0]
-            # domainScore[webID] = (count-min)*3/scoreRange
             scoreDict[webID] += (count-min)*3/scoreRange
         return scoreDict
         
     def search(self,query):
+        # try:
         startTimer = timeit.default_timer() # timer
 
         validTermID = []
@@ -73,6 +65,9 @@ class searcher:
         stopTimer = timeit.default_timer()
 
         return docScore,stopTimer-startTimer
+        # except Exception as e:
+        #     print(e)
+        #     return {},0
     
 
 

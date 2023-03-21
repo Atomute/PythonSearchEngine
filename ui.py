@@ -47,7 +47,7 @@ class spiderworker(QThread):
         self.urls = urls
         self.is_pause = False
         self.is_kill = False
-        if not depth: depth = [None]
+        if not depth: depth = [1]
         self.depth = depth[0]
 
     def run(self):
@@ -74,10 +74,8 @@ class spiderworker(QThread):
                 # this will insert that link
                 self.uporin.emit("insert")
 
-                for cururl,urltovisit in self.spider.run(url,self.depth):
+                for cururl in self.spider.run(url,self.depth):
                     count += 1
-                    if urltovisit != []:
-                        self.spider.push_log(urltovisit)
                     self.progress.emit("Crawled "+cururl)
                     self.indexer.indexOneWebsite(cururl)
                     self.get_country.find_c_websites_one(cururl)
@@ -348,7 +346,11 @@ class SearchEngine(QMainWindow):
         self.urlList.addItem("Continue scraping "+url.text())
         urls = self.db.get_column_specific("log","remaining",url.text(),"root")
         urls = "".join(urls)
-        self.worker = spiderworker(urls)
+        withDepth = self.db.get_column_specific("log","withDepth",url.text(),"root")
+        if withDepth == "True":
+            self.worker = spiderworker(urls)
+        else:
+            self.worker = spiderworker(urls,0)
 
         self.worker.progress.connect(self.reportProgress)
         self.worker.Upload_status.connect(self.pauseORcontinue)
@@ -448,8 +450,8 @@ class SearchEngine(QMainWindow):
         sp.db.close_conn()
 
     def kill_btn(self):
-        self.updateLOG()
         self.worker.kill()
+        self.updateLOG()
         self.urlList.clear()
         self.uplinkBox.clear()
 

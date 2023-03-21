@@ -63,7 +63,8 @@ def create_database(dbName):
     createLog = """CREATE TABLE IF NOT EXISTS log (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     root TEXT,
-                    remaining TEXT)"""
+                    remaining TEXT,
+                    withDepth TEXT)"""
     cursor.execute(createLog)
 
     conn.commit()

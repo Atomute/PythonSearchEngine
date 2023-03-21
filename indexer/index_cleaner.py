@@ -18,9 +18,13 @@ class Cleaning:
     def Normalize(self, doc):
         return doc.lower()
 
+    # def Remove_uni(self, doc):
+    #     doc_no_uni = re.sub(r"(@\[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)|^rt|http.+?"," ", doc)
+    #     return doc_no_uni
+    
     def Remove_uni(self, doc):
-        doc_no_uni = re.sub(r"(@\[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)|^rt|http.+?", " ", doc)
-        return doc_no_uni
+        doc_nouni = re.sub(r"(@[A-Za-z0-9]+)|([^0-9A-Za-zก-๙เ-ไใ]+)|(\w+:.//\S+)|^rt|http.+?", " ", doc)
+        return doc_nouni.strip()
 
     def Remove_stopw(self, doc):
         stop = set(stopwords.words('english'))
@@ -45,6 +49,7 @@ class Cleaning:
         du=[]
         list_of_words=word_tokenize(doc)
         for word in list_of_words:
+            if word == ".": continue
             if util.isthai(word):
                 a=normalize(word)
                 b=pythainlp.word_tokenize(a)
@@ -54,12 +59,13 @@ class Cleaning:
             else :
                 a = self.Normalize(word)
                 b = self.Remove_uni(a)
+                # print(b)
                 c = self.Remove_stopw(b)
                 d = self.Lemma(c)
                 for i in d:
                     if i in ['youre', 'im', 'hes', 'shes', 'theyre', 'were']:
                         d.remove(i) 
-
+                    
                 du=du+d
         du.sort()
         return du
