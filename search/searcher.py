@@ -15,10 +15,12 @@ class searcher:
     def scoreWord(self,terms):
         ans = {}
         results = self.db.get_word_for_search(terms)
-
-        maxScore = results[0][1]
-        minScore = results[-1][1]
-        scoreRange = maxScore-minScore
+        if results!=[] : 
+            maxScore = results[0][1]
+            minScore = results[-1][1]
+            scoreRange = maxScore-minScore
+        else :
+            scoreRange=1
 
         if scoreRange == 0: scoreRange = 1
         for result in results:
@@ -30,6 +32,7 @@ class searcher:
     
     def scoreDoc(self,scoreDict):
         result = self.db.get_MaxMin_Domain()
+        if len(result)==1: result=[result[0],result[0]]
         max = result[0]
         min = result[1]
         scoreRange = max-min

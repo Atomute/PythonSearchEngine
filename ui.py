@@ -146,16 +146,23 @@ class SearchEngine(QMainWindow):
         self.resultTable.setColumnWidth(1, 333)
         self.resultTable.setColumnWidth(2, 333)
         self.resultTable.cellDoubleClicked.connect(self.openUrl)
+        
+        self.webview_search = QtWebEngineWidgets.QWebEngineView(self.searchTab)
+        self.webview_search.setObjectName('webview_search')
+
 
         # Add widgets to a grid layout
+        # Create the grid layout and add widgets to it
         grid = QGridLayout(self.searchTab)
         grid.addWidget(self.searchLabel, 0, 0)
         grid.addWidget(self.searchBox, 0, 1)
         grid.addWidget(self.searchButton, 0, 2)
         grid.addWidget(self.resultCountLabel , 1, 0)
-        grid.addWidget(self.resultTable, 2, 0, 1, 3)
+        grid.addWidget(self.resultTable, 2, 0)
+        grid.addWidget(self.webview_search)
+        # grid.setRowStretch(5, 1)
+        # grid.setRowStretch(6, 1)
 
-        # Create the search tab and add it to the tab widget
         self.Country_allTab = QWidget(self)
         self.tabWidget.addTab(self.Country_allTab, 'All country')
 
@@ -216,6 +223,10 @@ class SearchEngine(QMainWindow):
         self.caltfidf = QPushButton('Calculate TFIDF',self.uplinkTab)
         self.caltfidf.setFont(QFont('Arial', 14))
         self.caltfidf.clicked.connect(self.TFIDF)
+
+        # self.webview.load(QtCore.QUrl.fromLocalFile(self.html_path))
+        
+
         # progress bar
         self.pbarLabbel = QLabel('Progress Bar:', self.uplinkTab)
         self.pbarLabbel.setFont(QFont('Arial', 14))
@@ -255,36 +266,7 @@ class SearchEngine(QMainWindow):
                 else:
                     self.urlList2.addItem(url)
 
-#---------------------------------  
-#Function in btn
-    # def search(self):
-    #     sentence = self.searchBox.text()
-    #     words = Cleaning().process_text(sentence)
-    #     index_ids = []
-    #     for word in words:
-    #         self.db.cursor.execute("SELECT index_id FROM keyword WHERE word=?", (word,))
-    #         result = self.db.cursor.fetchone()
-    #         if result is not None:
-    #             index_ids.append(result[0])
-    #     if len(index_ids) == 0:
-    #         self.updateResultTable([])
-    #     else:
-    #         # Updated query to use the tfidf column instead of the frequency column
-    #         self.db.cursor.execute("""SELECT websiteID, SUM(tfidf), COUNT(websiteID)
-    #                                  FROM website_inverted_index 
-    #                                  WHERE index_id IN ({}) 
-    #                                  GROUP BY websiteID 
-    #                                  ORDER BY SUM(tfidf) DESC""".format(",".join(str(i) for i in index_ids)))
-    #         results = self.db.cursor.fetchall()
-    #         websites = []
-    #         for result in results:
-    #             website_id = result[0]
-    #             tfidf_sum = result[1]
-    #             score = tfidf_sum*result[2]
-    #             self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID=?", (website_id,))
-    #             title, url = self.db.cursor.fetchone()
-    #             websites.append((title, url, score))
-    #         self.updateResultTable(websites)
+
 
     def search(self):
         start = timeit.default_timer()
@@ -299,7 +281,7 @@ class SearchEngine(QMainWindow):
 #//
         self.Mysearcher = searcher()
         results = self.Mysearcher.search(cleaned) 
-
+        
 
         if not results:
             self.updateResultTable([])
@@ -311,6 +293,29 @@ class SearchEngine(QMainWindow):
             self.db.cursor.execute("SELECT title, URL FROM websites WHERE websiteID={}".format(webID))
             title, url = self.db.cursor.fetchone()
             searchTable.append((title,url,score))
+        conn = sqlite3.connect('testt.sqlite3')
+        query = "SELECT websites.websiteID,websites.URL,websites.title,Country.country_id, Country.country, Country.countryISO, SUM(Website_country.frequency) as frequency_sum FROM Country INNER JOIN Website_country ON Country.country_id = Website_country.wc_id JOIN websites ON Website_country.website_id = websites.websiteID  WHERE websites.websiteID IN ({}) GROUP BY Country.country_id, Country.country, Country.countryISO  ".format(','.join(str(i)for i in results[0] ))
+        df = pd.read_sql_query(query, conn)
+
+
+        if not df.empty:
+                # Create the choropleth map
+            fig = px.choropleth(df, locations="countryISO", color="frequency_sum",
+                                hover_name="country",
+                                projection="natural earth")
+            html ='<html><body>'
+            html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
+            html += '</body></html>'
+            self.webview_search.setHtml(html)
+        else:
+            # Set the HTML to an empty message
+            fig = px.choropleth(projection="natural earth")
+            html ='<html><body>'
+            html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
+            html += '</body></html>'
+            self.webview_search.setHtml(html)
+            
+
 
         stop = timeit.default_timer()
         print(stop-start)
@@ -319,7 +324,7 @@ class SearchEngine(QMainWindow):
 
     def updateResultTable(self,websites):
         self.resultTable.setRowCount(len(websites))
-
+        dum=[]
         for i, website in enumerate(websites):
             title = website[0]
             url = website[1]
@@ -333,7 +338,8 @@ class SearchEngine(QMainWindow):
             self.resultTable.setItem(i, 0, titleItem)
             self.resultTable.setItem(i, 1, urlItem)
             self.resultTable.setItem(i, 2, freqSumItem)
-        
+
+
         # Update search result count label
         count = len(websites)
         self.resultCountLabel.setText(f'Result found: {count}')
