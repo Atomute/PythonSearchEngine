@@ -18,19 +18,19 @@ def create_database(dbName):
                         count INTEGER )"""
     cursor.execute(createDomain)
 
-    createbacklinks = """CREATE TABLE IF NOT EXISTS backlinks (
+    createbacklinks = """CREATE TABLE IF NOT EXISTS externalDomain (
                         websiteID INTEGER,
-                        backlink text,
+                        exDomain text,
                         FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE )"""
     cursor.execute(createbacklinks)
 
     # telling what domain are in this website
-    createDomainLink = """CREATE TABLE IF NOT EXISTS Websites_Domain (
-                        websiteID INTEGER,
-                        domainID INTEGER,
-                        FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
-                        FOREIGN KEY (domainID) REFERENCES domain(domainID) ON DELETE CASCADE )"""
-    cursor.execute(createDomainLink)
+    # createDomainLink = """CREATE TABLE IF NOT EXISTS Websites_Domain (
+    #                     websiteID INTEGER,
+    #                     domainID INTEGER,
+    #                     FOREIGN KEY (websiteID) REFERENCES websites(websiteID) ON DELETE CASCADE,
+    #                     FOREIGN KEY (domainID) REFERENCES domain(domainID) ON DELETE CASCADE )"""
+    # cursor.execute(createDomainLink)
 
     createCountry = """CREATE TABLE IF NOT EXISTS Country (
                     country_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +63,8 @@ def create_database(dbName):
     createLog = """CREATE TABLE IF NOT EXISTS log (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     root TEXT,
-                    remaining TEXT)"""
+                    remaining TEXT,
+                    withDepth TEXT)"""
     cursor.execute(createLog)
 
     conn.commit()

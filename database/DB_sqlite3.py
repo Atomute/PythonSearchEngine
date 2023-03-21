@@ -32,7 +32,7 @@ class DB():
     def insert_exlink(self,websiteID,exlink):
         # insert keywords to keywords table
         value = (websiteID,exlink)
-        query = "INSERT INTO backlinks VALUES (?, ?)"
+        query = "INSERT INTO externalDomain VALUES (?, ?)"
         self.cursor.execute(query, value)
 
     def insert_Websites_Domain(self,websitID,domainID):
@@ -70,6 +70,12 @@ class DB():
     
     def get_column_specific(self,table,column,value,*sec_column):
         if not sec_column: sec_column = [column]
+        if type(value) != str:
+            self.cursor.execute("SELECT {}.{} FROM {} WHERE {}={}".format(table,column,table,sec_column[0],value))
+            rows = self.cursor.fetchall()
+            ans = [row[0] for row in rows]
+
+            return ans
         self.cursor.execute("SELECT {}.{} FROM {} WHERE {}='{}'".format(table,column,table,sec_column[0],value))
         rows = self.cursor.fetchall()
         ans = [row[0] for row in rows]
@@ -101,11 +107,28 @@ class DB():
 
         return ans
     
+    def get_word_for_search(self,terms):
+        self.cursor.execute("""SELECT websiteID, COUNT(websiteID)*SUM(tfidf) AS score 
+                                FROM website_inverted_index 
+                                WHERE index_id IN ({}) 
+                                GROUP BY websiteID 
+                                ORDER BY score DESC""".format(",".join(str(i) for i in terms)))
+        results = self.cursor.fetchall()
+        return results
+    
+    def get_MaxMin_Domain(self):
+        self.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
+        result = self.cursor.fetchall()[0]
+        return result
+    
     def get_domainCount():
         pass
     
     def dump_record(self,table,column,value):
-        query = "DELETE FROM {} WHERE {}={}".format(table,column,value)
+        if type(value) == int:
+            query = "DELETE FROM {} WHERE {}={}".format(table,column,value)
+        else:
+            query = "DELETE FROM {} WHERE {}='{}'".format(table,column,value)
         self.cursor.execute(query)
 
     def dump_table(self):

@@ -53,4 +53,3 @@ class Getcountry:
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()
-

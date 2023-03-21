@@ -12,40 +12,45 @@ class searcher:
     def cleanQuery(self,query):
         return self.cleaner.process_text(query)
 
-    def scoreWord(self,termIDs):
-        # Take term ID and Calculate according to Lucene Scoring Method
+    def scoreWord(self,terms):
         ans = {}
-        self.db.cursor.execute("""SELECT websiteID, COUNT(websiteID), SUM(tfidf)FROM website_inverted_index 
-                                WHERE index_id IN ({}) 
-                                GROUP BY websiteID """.format(",".join(str(i) for i in termIDs)))
-        results = self.db.cursor.fetchall()
+        results = self.db.get_word_for_search(terms)
+
+        maxScore = results[0][1]
+        minScore = results[-1][1]
+        scoreRange = maxScore-minScore
+
+        if scoreRange == 0: scoreRange = 1
         for result in results:
             websiteID = result[0]
-            coord = result[1]
-            sumtfidf = result[2]
-            score = coord*sumtfidf
-            ans[websiteID] = score
+            score = result[1]
+            ans[websiteID] = (score-minScore)*7/scoreRange
+
         return ans
     
     def scoreDoc(self,scoreDict):
+        result = self.db.get_MaxMin_Domain()
+        max = result[0]
+        min = result[1]
+        scoreRange = max-min
+        if scoreRange == 0: scoreRange=1
+
         for webID in scoreDict:
-            self.db.cursor.execute("SELECT URL FROM websites WHERE websiteID={}".format(webID))
-            url = self.db.cursor.fetchone()[0]
+            url = self.db.get_column_specific("websites","URL",webID,"websiteID")[0]
 
             domain = self.spider.extractDomain(url)
-            self.db.cursor.execute("SELECT count FROM domain WHERE domainName='{}'".format(domain))
-
-            domainCount = self.db.cursor.fetchone()[0]
-            scoreDict[webID] += domainCount
-
+            count = self.db.get_column_specific("domain","count",domain,"domainName")
+            if not count: count = [min]
+            count = count[0]
+            scoreDict[webID] += (count-min)*3/scoreRange
         return scoreDict
-
+        
     def search(self,query):
+        # try:
         startTimer = timeit.default_timer() # timer
 
         validTermID = []
         terms = self.cleanQuery(query)
-        print(terms)
 
         existWord = self.db.get_column("keyword","word")
         for term in terms:
@@ -57,8 +62,16 @@ class searcher:
 
         docScore = self.scoreDoc(wordScore)
 
-        docScore = sorted(docScore.items(), key=lambda x:x[1],reverse=True)
         stopTimer = timeit.default_timer()
-        print(docScore,stopTimer-startTimer)
 
-        return docScore
+        return docScore,stopTimer-startTimer
+        # except Exception as e:
+        #     print(e)
+        #     return {},0
+    
+
+
+
+
+
+        

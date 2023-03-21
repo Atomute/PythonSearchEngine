@@ -14,37 +14,58 @@ class searcher:
 
     def scoreWord(self,terms):
         ans = {}
-        self.db.cursor.execute("""SELECT websiteID, COUNT(websiteID), SUM(tfidf)FROM website_inverted_index 
+        self.db.cursor.execute("""SELECT websiteID, COUNT(websiteID)*SUM(tfidf) AS score 
+                                FROM website_inverted_index 
                                 WHERE index_id IN ({}) 
-                                GROUP BY websiteID """.format(",".join(str(i) for i in terms)))
+                                GROUP BY websiteID 
+                                ORDER BY score DESC""".format(",".join(str(i) for i in terms)))
         results = self.db.cursor.fetchall()
+
+        maxScore = results[0][1]
+        minScore = results[-1][1]
+        scoreRange = maxScore-minScore
+        if scoreRange == 0: scoreRange = 1
         for result in results:
             websiteID = result[0]
-            coord = result[1]
-            sumtfidf = result[2]
-            score = coord*sumtfidf
-            ans[websiteID] = score
+            score = result[1]
+            ans[websiteID] = (score-minScore)*7/scoreRange
+
         return ans
     
     def scoreDoc(self,scoreDict):
+        # domainScore = {}
+        self.db.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
+        result = self.db.cursor.fetchall()[0]
+        max = result[0]
+        min = result[1]
+        scoreRange = max-min
+        if scoreRange == 0: scoreRange=1
+
         for webID in scoreDict:
             self.db.cursor.execute("SELECT URL FROM websites WHERE websiteID={}".format(webID))
             url = self.db.cursor.fetchone()[0]
 
             domain = self.spider.extractDomain(url)
             self.db.cursor.execute("SELECT count FROM domain WHERE domainName='{}'".format(domain))
-
-            domainCount = self.db.cursor.fetchone()[0]
-            scoreDict[webID] += domainCount
-
+            count = self.db.cursor.fetchone()[0]
+            # domainScore[webID] = (count-min)*3/scoreRange
+            scoreDict[webID] += (count-min)*3/scoreRange
         return scoreDict
 
+    def domainNorm(self):
+        self.db.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
+        max = self.db.cursor.fetchone()[0][0]
+        min = self.db.cursor.fetchone()[0][1]
+        scoreRange = max-min
+        if scoreRange == 0: scoreRange=1
+
+        return min,scoreRange
+        
     def search(self,query):
         startTimer = timeit.default_timer() # timer
 
         validTermID = []
         terms = self.cleanQuery(query)
-        print(terms)
 
         existWord = self.db.get_column("keyword","word")
         for term in terms:
@@ -57,16 +78,12 @@ class searcher:
         docScore = self.scoreDoc(wordScore)
 
         stopTimer = timeit.default_timer()
-        docScore = sorted(docScore.items(), key=lambda x:x[1],reverse=True)
-        print(docScore,stopTimer-startTimer)
 
-        return docScore,startTimer-startTimer
+        return docScore,stopTimer-startTimer
     
-a = searcher()
-a.search("fandom ...")
+
 
 
 
 
         
-

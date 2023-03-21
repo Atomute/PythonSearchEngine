@@ -3,7 +3,8 @@ import sys
 sys.path.insert(1,"./")
 from indexer.index_cleaner import Cleaning
 import time
-import math
+from math import log
+import timeit
 
 class InvertedIndex:
     def __init__(self):
@@ -88,31 +89,41 @@ class InvertedIndex:
 
     def calculate_tfidf(self):
         # Get the total number of documents
-        self.cursor.execute("SELECT COUNT(DISTINCT websiteID) FROM website_inverted_index")
+        start = timeit.default_timer()
+        self.cursor.execute("SELECT COUNT(*) FROM websites")
         total_docs = self.cursor.fetchone()[0]
         
         # Loop through each word in the inverted index
         self.cursor.execute("SELECT index_id FROM keyword")
         index_ids = [row[0] for row in self.cursor.fetchall()]
-        lenght = len(index_ids)
+
+        self.cursor.execute("SELECT COUNT(*) FROM website_inverted_index")
+        lenght = self.cursor.fetchone()[0]
         counter = 0
         for index_id in index_ids:
-            counter += 1
+            
             # Get the documents that contain the word
             self.cursor.execute("SELECT websiteID, frequency FROM website_inverted_index WHERE index_id=?", (index_id,))
             rows = self.cursor.fetchall()
             
             # Calculate the IDF score for the word
             num_docs_with_word = len(rows)
-            idf = math.log(total_docs / num_docs_with_word)
+            idf = log(total_docs / num_docs_with_word)
             
             # Update the TF-IDF score for each document that contains the word
             for row in rows:
+                counter += 1
+
                 website_id = row[0]
                 tf = row[1]
                 tfidf = tf * idf
                 self.cursor.execute("UPDATE website_inverted_index SET tfidf=? WHERE websiteID=? AND index_id=?", (tfidf, website_id, index_id))
                 self.conn.commit()
+
+                print(f"{counter}",end="\r")
+            
             yield counter*100/lenght
+        stop = timeit.default_timer()
+        print(stop-start)
         
         
