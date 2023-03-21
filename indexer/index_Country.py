@@ -39,6 +39,7 @@ class Getcountry:
         website_id = website_id[0]
         self.cursor.execute("SELECT website_inverted_index.index_id, word FROM keyword JOIN website_inverted_index ON website_inverted_index.index_id = keyword.index_id WHERE website_inverted_index.websiteID = ?", (website_id,))
         website_keywords = self.cursor.fetchall()
+        country_freq = {}
         try:
             for keyword in website_keywords:
                 word = keyword[1].lower()
@@ -48,8 +49,13 @@ class Getcountry:
 
                     self.cursor.execute("SELECT country_id FROM Country WHERE countryISO=?", (country_code,))
                     country_id = self.cursor.fetchone()[0]
+                    if country_id in country_freq:
+                        country_freq[country_id] += 1
+                    else:
+                        country_freq[country_id] = 1
                     self.cursor.execute("INSERT INTO Website_country (website_id, wc_id) VALUES (?, ?)", (website_id, country_id))
-                    # print(website_url, word)
+            for country_id, freq in country_freq.items():
+                self.cursor.execute("UPDATE Website_country SET frequency = ? WHERE website_id = ? AND wc_id = ?", (freq, website_id, country_id))
             self.conn.commit()
         except KeyboardInterrupt:
             self.conn.commit()
