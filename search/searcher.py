@@ -45,19 +45,17 @@ class searcher:
             scoreDict[webID] += (count-min)*3/scoreRange
         return scoreDict
         
-    def search(self,query):
+    def search(self,terms):
         # try:
         startTimer = timeit.default_timer() # timer
 
         validTermID = []
-        terms = self.cleanQuery(query)
-
         existWord = self.db.get_column("keyword","word")
         for term in terms:
             if term in existWord:
                 termID = self.db.get_ID("keyword","word",term)
                 validTermID.append(termID)
-
+ 
         wordScore = self.scoreWord(validTermID)
 
         docScore = self.scoreDoc(wordScore)

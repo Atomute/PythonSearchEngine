@@ -14,7 +14,7 @@ from indexer.index_inverter import InvertedIndex
 from indexer.index_Country import Getcountry
 from database.DB_sqlite3 import DB
 from search.searcher import searcher
-
+from indexer.index_cleaner import Cleaning
 database_name = "testt.sqlite3"
 
 class tfidfWorker(QThread):
@@ -291,8 +291,15 @@ class SearchEngine(QMainWindow):
         searchTable = []
         query = self.searchBox.text()
         if query.strip() == '': return
+        self.Cleantext=Cleaning()
+        cleaned=self.Cleantext.process_text(query)
+        self.get_tfidf=InvertedIndex()
+        for word in cleaned:
+            self.get_tfidf.calculate_tfidf_byword(word)
+#//
         self.Mysearcher = searcher()
-        results = self.Mysearcher.search(query) 
+        results = self.Mysearcher.search(cleaned) 
+
 
         if not results:
             self.updateResultTable([])

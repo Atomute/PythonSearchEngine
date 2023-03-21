@@ -3,7 +3,6 @@ import plotly.graph_objs as go
 import plotly.express as px
 import sqlite3
 import pandas as pd
-import os
 #Sub widget
 class WebsiteDetailsWindow(QtWidgets.QWidget):
     def __init__(self, title, url, content):
@@ -45,9 +44,7 @@ class WebsiteDetailsWindow(QtWidgets.QWidget):
         self.spatial_tab.setLayout(self.spatial_tab_layout)
         self.tabWidget.addTab(self.spatial_tab, 'Spatial')
 
-        # # Create the HTML file for the plot
-        # self.html_path = os.path.abspath("map.html")
-        # self.create_map()
+
 
         # Create the web view to display the plot
         self.webview = QtWebEngineWidgets.QWebEngineView(self.spatial_tab)
@@ -76,11 +73,27 @@ class WebsiteDetailsWindow(QtWidgets.QWidget):
             html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
             html += '</body></html>'
             self.webview.setHtml(html)
+
+        self.webviewchart = QtWebEngineWidgets.QWebEngineView(self.spatial_tab)
+        self.webviewchart.setObjectName('webviewchart')
+        self.spatial_tab_layout.addWidget(self.webviewchart)
+
         # Set the layout for the main widget
         self.setLayout(QtWidgets.QVBoxLayout())
         self.layout().addWidget(self.tabWidget)
 
-
+        query2 = f"SELECT * FROM keyword INNER JOIN website_inverted_index ON keyword.index_id = website_inverted_index.index_id JOIN websites ON  websites.websiteID = website_inverted_index.websiteID WHERE websites.URL='{url}'" 
+        # Group the data by the word column and sum the frequency column
+        df2 = pd.read_sql_query(query2, conn)
+        result = df2.groupby('word')['tfidf'].sum().reset_index()
+        # Sort the result by frequency in descending order and get the top 10
+        top_10 = result.sort_values('tfidf', ascending=False).head(20)
+        # Display the result
+        fig = px.bar(top_10, x='word', y='tfidf',color="tfidf", hover_data=['word', 'tfidf'],labels={'pop':'Word'})
+        html ='<html><body>'
+        html =plotly.offline.plot(fig,output_type ='div',include_plotlyjs='cdn')
+        html += '</body></html>'
+        self.webviewchart.setHtml(html)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
@@ -92,25 +105,3 @@ if __name__ == '__main__':
     searchEngine = SearchEngine()
     searchEngine.show()
     sys.exit(app.exec_())
-
-
-
-
-            # Create the search tab and add it to the tab widget
-        self.Country_allTab = QWidget(self)
-        self.tabWidget.addTab(self.Country_allTab, 'All country')
-
-        # Create the webview widget and layout
-        self.layout = QtWidgets.QVBoxLayout(self.Country_allTab)
-        self.webview = QtWebEngineWidgets.QWebEngineView()
-        self.layout.addWidget(self.webview)
-
-        # Load the choropleth map into the webview
-        conn = sqlite3.connect('testt.sqlite3')
-        query = "SELECT * FROM Country INNER JOIN Website_country ON Country.country_id = Website_country.wc_id"
-        df = pd.read_sql_query(query, conn)
-        fig = px.choropleth(df, locations="countryISO", color="frequency",
-                            hover_name="country",
-                            projection="natural earth")
-        html = plotly.offline.plot(fig, output_type='div', include_plotlyjs='cdn')
-        self.webview.setHtml(html)

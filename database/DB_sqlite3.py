@@ -99,7 +99,7 @@ class DB():
         return ans
     
     def get_ID(self,table,column,url):
-        query = "SELECT * FROM {} WHERE {} LIKE '%{}%'".format(table,column,url)
+        query = "SELECT * FROM {} WHERE {} ='{}'".format(table,column,url)
         self.cursor.execute(query)
         id = self.cursor.fetchall()
         if id == []: return None
