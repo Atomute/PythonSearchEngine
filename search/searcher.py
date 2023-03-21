@@ -64,6 +64,7 @@ class searcher:
 
         stopTimer = timeit.default_timer()
 
+        docScore = dict(sorted(docScore.items(), key=lambda x: x[1], reverse=True))
         return docScore,stopTimer-startTimer
         # except Exception as e:
         #     print(e)

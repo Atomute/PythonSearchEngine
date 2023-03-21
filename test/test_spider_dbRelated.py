@@ -58,7 +58,7 @@ class test_push_websites(unittest.TestCase):
         self.spider.push_websites(self.value,url)
         mock_insert_websites.assert_called_with(self.value)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.spider.db.close_conn()
         os.remove(self.dbName)
 
@@ -212,10 +212,10 @@ class test_removeOne(unittest.TestCase):
 
         self.db.cursor.execute("SELECT websiteID FROM websites")
         websites = self.db.cursor.fetchone()[0]
-        # self.db.cursor.execute("SELECT websiteID FROM backlinks")
-        # backlinks = [x[0] for x in self.db.cursor.fetchall()]
+        self.db.cursor.execute("SELECT websiteID FROM externalDomain")
+        backlinks = [x[0] for x in self.db.cursor.fetchall()]
 
-        self.assertEqual([websites],[2])
+        self.assertEqual([websites,backlinks],[2,[]])
 
     # There is no test for non-foreign-key tables since it is the duty of those counter function and I tested them seperately
 

@@ -41,6 +41,14 @@ class DB():
 
         self.cursor.execute(query,value)
 
+    def insert_country(self,word,country_code):
+        self.cursor.execute("INSERT OR IGNORE INTO Country (country,countryISO) VALUES (?, ?)", (word,country_code))
+        self.commit()
+
+    def insert_website_country(self,website_id,country_id):
+        self.cursor.execute("INSERT INTO Website_country (website_id, wc_id) VALUES (?, ?)", (website_id, country_id))
+        self.commit()
+
     def remove(self,table,row_ID):
         pass
 
@@ -107,6 +115,11 @@ class DB():
 
         return ans
     
+    def get_website_keywords(self,website_id):
+        self.cursor.execute("SELECT website_inverted_index.index_id, word FROM keyword JOIN website_inverted_index ON website_inverted_index.index_id = keyword.index_id WHERE website_inverted_index.websiteID = ?", (website_id,))
+        website_keywords = self.cursor.fetchall()
+        return website_keywords
+    
     def get_word_for_search(self,terms):
         self.cursor.execute("""SELECT websiteID, COUNT(websiteID)*SUM(tfidf) AS score 
                                 FROM website_inverted_index 
@@ -117,12 +130,17 @@ class DB():
         return results
     
     def get_MaxMin_Domain(self):
-        self.db.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
-        result = self.db.cursor.fetchall()[0]
+        self.cursor.execute("SELECT MAX(count), MIN(count) FROM domain")
+        result = self.cursor.fetchall()[0]
         return result
     
     def get_domainCount():
         pass
+
+    def get(self,website_url):
+        self.cursor.execute("SELECT websiteID FROM websites WHERE URL = ?", (website_url,))
+        website_id = self.cursor.fetchone()
+        return website_id
     
     def dump_record(self,table,column,value):
         if type(value) == int:

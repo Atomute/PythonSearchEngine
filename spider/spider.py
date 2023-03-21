@@ -59,13 +59,16 @@ class spider:
         if title.text.isspace() or title.text == '': return
 
         return title.text.strip()
-    
+
     def get_all_links(self,depth,*urls):
         print("Depth = "+str(depth))
         if depth == 0:
             return self.urltovisit
+        
         newURL = []
+
         if type(urls[0]) != str: urls = urls[0]
+
         for url in urls:
             html = requests.get(url).text
             soup = BeautifulSoup(html,'html.parser')
@@ -84,10 +87,9 @@ class spider:
                     continue
 
                 if self.extractDomain(fullpath) != self.rootDomain:
-                    # external link in this page
-                    # self.exlinks.append(fullpath)
                     continue
-                if  path == None or "#" in path:
+
+                if  path == None or "#" in path or "File:" in path:
                     continue
                 
                 self.urltovisit.append(fullpath)
@@ -209,9 +211,6 @@ class spider:
             self.country.find_c_websites_one(url)
             self.push_backlinks(self.exlinks)
             
-            for url in self.urltovisit:
-                print(url)
-            # self.push_log()
             self.urltovisit = []
             
         self.counter()
@@ -346,9 +345,12 @@ class spider:
             self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
             self.visitedurl.append(root)
             self.get_all_links(depth[0],root)
-            self.depth = 0
+            self.depth = -1
             self.withDepth ="True"
-        self.push_log(self.urltovisit,self.withDepth)
+        
+        if self.depth != 0:
+            self.push_log(self.urltovisit,self.withDepth)
+            
 
         self.robot.fetch(self.root+"robots.txt")
         
@@ -361,6 +363,8 @@ class spider:
                 self.visitedurl.append(root)
 
                 self.currentURL = self.urltovisit.pop(0)
+                if not urlparse(self.currentURL).scheme or not urlparse(self.currentURL).netloc:
+                    continue
 
                 # check robots.txt
                 allow = self.robot.is_allowed("*",self.currentURL)
