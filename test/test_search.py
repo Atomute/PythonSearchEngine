@@ -39,10 +39,30 @@ class test_scoreDoc(unittest.TestCase):
     @patch('database.DB_sqlite3.DB.get_MaxMin_Domain')
     def test_normal(self,mock_MaxMin,mock_get_column_specific):
         mock_MaxMin.return_value = [10,0]
-        mock_get_column_specific.side_effect = ["https://domain1",[12],"https://domain2",[5]]
+        mock_get_column_specific.side_effect = ["https://domain1",[8],"https://domain2",[5]]
         tester = self.searcher.scoreDoc({1:0,2:0})
 
-        self.assertEqual(tester,{1: 3.6, 2: 1.5})
+        self.assertEqual(tester,{1: 2.4, 2: 1.5})
+
+    @patch('database.DB_sqlite3.DB.get_column_specific')
+    @patch('database.DB_sqlite3.DB.get_MaxMin_Domain')
+    def test_no_max_min(self,mock_MaxMin,mock_get_column_specific):
+        mock_MaxMin.return_value = [10,10]
+        mock_get_column_specific.side_effect = ["https://domain1",[10],"https://domain2",[10]]
+        tester = self.searcher.scoreDoc({1:0,2:0})
+
+        self.assertEqual(tester,{1: 0.0, 2: 0.0})
+
+    @patch('database.DB_sqlite3.DB.get_column_specific')
+    @patch('database.DB_sqlite3.DB.get_MaxMin_Domain')
+    def test_more_complicate_number(self,mock_MaxMin,mock_get_column_specific):
+        mock_MaxMin.return_value = [10,5]
+        mock_get_column_specific.side_effect = ["https://domain1",[8],"https://domain2",[5]]
+        tester = self.searcher.scoreDoc({1:1,2:7})
+
+        self.assertEqual(tester,{1: 2.8, 2: 7.0})
+
+    
 
 if __name__ == "__main__":
     unittest.main()

@@ -125,5 +125,3 @@ class InvertedIndex:
             yield counter*100/lenght
         stop = timeit.default_timer()
         print(stop-start)
-        
-        

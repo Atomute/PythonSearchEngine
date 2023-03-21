@@ -81,11 +81,19 @@ class test_get_links(unittest.TestCase):
         self.assertIsInstance(tester,list)
 
     def test_one_link(self):
+        self.spider.depth = None
         tester = self.spider.get_links("<html> <body> <a href='https://www.root.com/firstpage'>something</a> </body> </html>")
 
         self.assertEqual(tester,['https://www.root.com/firstpage'])
 
     def test_multiple_link(self):
+        self.spider.depth = None
+        tester = self.spider.get_links("<html> <body> <a href='https://www.root.com/firstpage'>something</a> <a href='https://www.root.com/secondpage'>something</a> </body> </html>")
+
+        self.assertEqual(tester,['https://www.root.com/firstpage','https://www.root.com/secondpage'])
+
+    def test_with_depth_greater_than_zero(self):
+        self.spider.depth = 5
         tester = self.spider.get_links("<html> <body> <a href='https://www.root.com/firstpage'>something</a> <a href='https://www.root.com/secondpage'>something</a> </body> </html>")
 
         self.assertEqual(tester,['https://www.root.com/firstpage','https://www.root.com/secondpage'])
@@ -102,6 +110,12 @@ class test_get_links(unittest.TestCase):
 
     def test_no_link(self):
         tester = self.spider.get_links("no link here")
+
+        self.assertEqual(tester,[])
+
+    def test_with_depth_less_than_zero(self):
+        self.spider.depth = 0
+        tester = self.spider.get_links("<a href='https://www.something.com/'>something</a>")
 
         self.assertEqual(tester,[])
 

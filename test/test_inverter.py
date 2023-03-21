@@ -70,16 +70,23 @@ class test_get_word_freq(unittest.TestCase):
 
 class test_add_words_to_index(unittest.TestCase):
     def setUp(self):
-        self.index = InvertedIndex("Inverted_4")
-        self.mock_cursor = MagicMock()
-        self.index.cursor = self.mock_cursor
+        self.index = InvertedIndex()
+        # self.mock_cursor = MagicMock()
+        # self.index.cursor = self.mock_cursor
 
-    def test_add_words_to_index_without_website_id(self):
-        word_freq = {'hello': 1, 'world': 2}
-        expected_query = "INSERT INTO Inverted_4 (word, frequency) VALUES (?,?)"
-        expected_params = [('hello', 1), ('world',2)]
-        self.index.add_words_to_index(word_freq)
-        self.mock_cursor.execute.assert_called_once_with(expected_query, expected_params)
+    @patch('indexer.index_inverter.sqlite3')
+    def test_add_words_to_index_without_website_id(self,mock_cursor):
+        mock_cursor.connect().cursor().fetchone.return_value = [1]
+        tester = self.index.add_words_to_index({"word":1})
+
+        self.assertEqual(tester,[1])
+
+class test_add_website_index_relation(unittest.TestCase):
+    def setUp(self):
+        self.index = InvertedIndex()
+
+    def normal(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()

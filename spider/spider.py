@@ -97,7 +97,6 @@ class spider:
 
     def get_links(self,html):
         # find links in each webpages and add to urltovisit list
-        self.currentDepth -= 1
 
         soup = BeautifulSoup(html,'html.parser')
         links = soup.find_all('a')
@@ -121,8 +120,9 @@ class spider:
             if  path == None or "#" in path:
                 continue
             
-            if self.depth == None or self.currentDepth >= 0:
+            if self.depth == None or self.depth>= 0:
                 self.urltovisit.append(fullpath)
+
         return self.urltovisit
     
     def push_domain(self,domain,*count):
@@ -336,10 +336,10 @@ class spider:
         if not self.rootDomain in self.db.get_column("domain","domainName"): 
             self.push_domain(self.rootDomain)
 
-        withDepth = None
+        self.withDepth = None
         if not depth or depth == (None,): 
             self.depth=None
-            withDepth = "False"
+            self.withDepth = "False"
         elif depth: 
             print("find all the link")
             self.currentURL = root
@@ -347,8 +347,8 @@ class spider:
             self.visitedurl.append(root)
             self.get_all_links(depth[0],root)
             self.depth = 0
-            withDepth ="True"
-        self.push_log(self.urltovisit,withDepth)
+            self.withDepth ="True"
+        self.push_log(self.urltovisit,self.withDepth)
 
         self.robot.fetch(self.root+"robots.txt")
         
@@ -370,16 +370,14 @@ class spider:
 
                 self.onelink(self.currentURL)
                 
-
                 stopTimer = timeit.default_timer()
                 print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
 
                 if self.is_kill:
-                    if self.urltovisit != []:
-                        self.push_log(self.urltovisit,withDepth)
-                    self.urltovisit = []
+                    # if self.urltovisit != []:
+                    #     self.push_log(self.urltovisit,withDepth)
+                    # self.urltovisit = []
                     # self.push_exlinkDomain()
-
                     self.counter()
                     return self.currentURL
 
@@ -390,6 +388,5 @@ class spider:
             except Exception as e:
                 print(e)
                 pass
-        self.push_log(self.urltovisit,withDepth)
         self.counter()
         # self.push_exlinkDomain()
