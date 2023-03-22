@@ -125,3 +125,20 @@ class InvertedIndex:
             yield counter*100/lenght
         stop = timeit.default_timer()
         print(stop-start)
+
+        def calculate_tfidf_byword(self,word):
+            self.cursor.execute("SELECT COUNT() FROM websites")
+            total_docs = self.cursor.fetchone()[0]
+            self.cursor.execute(f"SELECT website_inverted_index.index_id,website_inverted_index.frequency,keyword.word ,website_inverted_index.websiteID FROM website_inverted_index JOIN keyword ON website_inverted_index.index_id = keyword.index_id JOIN websites ON websites.websiteID = website_inverted_index.websiteID WHERE word = '{word}'")
+            wordinweb=self.cursor.fetchall()
+            num_docs_with_word = len(wordinweb)
+            if num_docs_with_word != 0:
+                idf = log(total_docs / num_docs_with_word)
+                for row in wordinweb:
+                        index_id = row[0]
+                        tf = row[1]
+                        websiteID=row[3]
+                        tfidf = tf*idf
+                        print('tfidf=',tfidf,'index_id',index_id,'web',websiteID)
+                        self.cursor.execute("UPDATE website_inverted_index SET tfidf=? WHERE websiteID=? AND index_id=?", (tfidf, websiteID, index_id))
+                        self.conn.commit()

@@ -17,10 +17,6 @@ class Cleaning:
         
     def Normalize(self, doc):
         return doc.lower()
-
-    # def Remove_uni(self, doc):
-    #     doc_no_uni = re.sub(r"(@\[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)|^rt|http.+?"," ", doc)
-    #     return doc_no_uni
     
     def Remove_uni(self, doc):
         doc_nouni = re.sub(r"(@[A-Za-z0-9]+)|([^0-9A-Za-zก-๙เ-ไใ]+)|(\w+:.//\S+)|^rt|http.+?", " ", doc)

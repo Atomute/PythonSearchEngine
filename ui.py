@@ -92,7 +92,7 @@ class spiderworker(QThread):
         urls = self.urls.split(",")
         count = 0
         while urls:
-            url = urls.pop()
+            url = urls.pop(0)
             
             while self.is_pause:
                 sleep(0)

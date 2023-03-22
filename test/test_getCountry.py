@@ -26,16 +26,6 @@ class test_find_c_website_one(unittest.TestCase):
     @patch('database.DB_sqlite3.DB.insert_country')
     @patch('database.DB_sqlite3.DB.get_website_keywords')
     @patch('database.DB_sqlite3.DB.get_ID')
-    def test_webID_not_in_database(self,mock_get_id,mock_get_website_keywords,mock_insert_country,mock_insert_website_country):
-        mock_get_id.side_effect = [None]
-
-        tester = self.country.find_c_websites_one("https://test")
-        self.assertEqual(tester,None)
-
-    @patch('database.DB_sqlite3.DB.insert_website_country')
-    @patch('database.DB_sqlite3.DB.insert_country')
-    @patch('database.DB_sqlite3.DB.get_website_keywords')
-    @patch('database.DB_sqlite3.DB.get_ID')
     def test_multiple_country(self,mock_get_id,mock_get_website_keywords,mock_insert_country,mock_insert_website_country):
         mock_get_id.side_effect = [1,1,2]
         mock_get_website_keywords.return_value = [[1,"thailand"],[2,"FRance"]]
@@ -44,6 +34,16 @@ class test_find_c_website_one(unittest.TestCase):
         
         mock_insert_country.assert_has_calls([call("thailand","THA"),call("france","FRA")])
         mock_insert_website_country.assert_has_calls([call(1,1),call(1,2)])
+
+    @patch('database.DB_sqlite3.DB.insert_website_country')
+    @patch('database.DB_sqlite3.DB.insert_country')
+    @patch('database.DB_sqlite3.DB.get_website_keywords')
+    @patch('database.DB_sqlite3.DB.get_ID')
+    def test_webID_not_in_database(self,mock_get_id,mock_get_website_keywords,mock_insert_country,mock_insert_website_country):
+        mock_get_id.side_effect = [None]
+
+        tester = self.country.find_c_websites_one("https://test")
+        self.assertEqual(tester,None)
 
     @patch('database.DB_sqlite3.DB.insert_website_country')
     @patch('database.DB_sqlite3.DB.insert_country')

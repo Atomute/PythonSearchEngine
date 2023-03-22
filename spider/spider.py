@@ -205,8 +205,10 @@ class spider:
         # simply delete one entry and scrape it again or if the url is not in table, will scrape it
         if url in self.db.get_column("websites","URL"):
             self.removeone(url)
-            
-        for url in self.run(url,0):
+            self.rootDomain = self.extractDomain(url)
+            self.depth = -1
+            self.visitedurl = self.db.get_visited_url("websites","URL",self.root[:-1])
+            self.onelink(url)
             self.indexer.indexOneWebsite(url)
             self.country.find_c_websites_one(url)
             self.push_backlinks(self.exlinks)
@@ -350,7 +352,6 @@ class spider:
         
         if self.depth != 0:
             self.push_log(self.urltovisit,self.withDepth)
-            
 
         self.robot.fetch(self.root+"robots.txt")
         
@@ -378,10 +379,6 @@ class spider:
                 print("crawled "+self.currentURL+" in ",stopTimer-startTimer)
 
                 if self.is_kill:
-                    # if self.urltovisit != []:
-                    #     self.push_log(self.urltovisit,withDepth)
-                    # self.urltovisit = []
-                    # self.push_exlinkDomain()
                     self.counter()
                     return self.currentURL
 
